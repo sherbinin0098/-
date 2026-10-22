@@ -167,6 +167,9 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #00000040}
 .pop{display:flex;flex-direction:column;gap:3px;font-family:inherit;font-size:13px;min-width:150px}
+.pie{border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px #00000066;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.pie span{color:#fff;font:700 13px/1 system-ui,sans-serif;text-shadow:0 0 3px #000,0 0 3px #000}
+.pop button i{display:inline-block;width:10px;height:10px;border-radius:50%;border:2px solid #fff;margin-right:6px;vertical-align:-1px}
 .pop button{font:inherit;font-weight:600;border:0;border-radius:8px;background:#1f5bc4;color:#fff;padding:7px 10px;margin-top:4px;cursor:pointer;text-align:left}
 input.plateEdit{font-family:var(--f-plate);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
 </style>
@@ -800,10 +803,23 @@ input.plateEdit{font-family:var(--f-plate);font-size:22px;letter-spacing:.08em;t
       });
       var ll=[];
       order.forEach(function(k){
-        var g=groups[k],n=g.list.length,top=g.list[0];
-        var m=L.circleMarker([g.lat,g.lon],{radius:11+Math.min(n-1,4)*3,color:'#ffffff',weight:3,fillColor:colors[top.status]||colors.new,fillOpacity:1}).addTo(grp);
-        var html='<div class="pop"><b>'+(n>1?n+' '+(n<5?'случая':'случаев')+' здесь':'Случай')+'</b>'+g.list.slice(0,8).map(function(r){
-          return '<button type="button" data-open="'+r.id+'">'+esc(r.plate?pretty(r.plate):'Номер не указан')+' · '+fmtDate(r.date)+'</button>'}).join('')+'</div>';
+        var g=groups[k],n=g.list.length;
+        var cnt={violator:0,ok:0,new:0};
+        g.list.forEach(function(r){cnt[colors[r.status]?r.status:'new']++});
+        // кружок-«пирог»: доли цветов по числу случаев
+        var acc=0,stops=[];
+        ['violator','ok','new'].forEach(function(st){
+          if(!cnt[st])return;
+          var from=acc/n*100;acc+=cnt[st];var to=acc/n*100;
+          stops.push(colors[st]+' '+from.toFixed(1)+'% '+to.toFixed(1)+'%');
+        });
+        var size=28+Math.min(n-1,4)*5;
+        var icon=L.divIcon({className:'',iconSize:[size,size],iconAnchor:[size/2,size/2],
+          html:'<div class="pie" style="width:'+size+'px;height:'+size+'px;background:conic-gradient('+stops.join(',')+')">'+(n>1?'<span>'+n+'</span>':'')+'</div>'});
+        var m=L.marker([g.lat,g.lon],{icon:icon}).addTo(grp);
+        var mixed=Object.keys(cnt).filter(function(x){return cnt[x]}).length>1;
+        var html='<div class="pop"><b>'+(n>1?n+' '+(n<5?'случая':'случаев')+' здесь':'Случай')+(mixed?' (разные результаты)':'')+'</b>'+g.list.slice(0,8).map(function(r){
+          return '<button type="button" data-open="'+r.id+'"><i style="background:'+(colors[r.status]||colors.new)+'"></i>'+esc(r.plate?pretty(r.plate):'Номер не указан')+' · '+fmtDate(r.date)+'</button>'}).join('')+'</div>';
         m.bindPopup(html);ll.push([g.lat,g.lon]);
       });
       setTimeout(function(){map2.invalidateSize();if(ll.length===1)map2.setView(ll[0],17);else map2.fitBounds(ll,{padding:[40,40],maxZoom:17})},0);
