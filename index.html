@@ -356,22 +356,15 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     return Promise.race([f,t]);
   }
   // ---------- map picker (pin in the centre, move the map) ----------
-  var LLS=['https://unpkg.com/leaflet@1.9.4/dist/','https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/','https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/'];
-  var llReady=null,map=null,pickCb=null,pickAddr=null,pickSeq=0,lookT=null;
-  function loadFrom(i,res,rej){
-    if(i>=LLS.length){rej();return}
-    var base=LLS[i],s=document.createElement('script');
-    s.src=base+'leaflet.js';
-    s.onload=function(){
-      var l=document.createElement('link');l.rel='stylesheet';l.href=base+'leaflet.css';document.head.appendChild(l);res();
-    };
-    s.onerror=function(){s.remove();loadFrom(i+1,res,rej)};
-    document.head.appendChild(s);
-  }
+  var LL='https://unpkg.com/leaflet@1.9.4/dist/',llReady=null,map=null,pickCb=null,pickAddr=null,pickSeq=0,lookT=null;
   function loadLeaflet(){
     if(window.L)return Promise.resolve();
     if(llReady)return llReady;
-    llReady=new Promise(function(res,rej){loadFrom(0,res,function(){llReady=null;rej()})});
+    llReady=new Promise(function(res,rej){
+      var l=document.createElement('link');l.rel='stylesheet';l.href=LL+'leaflet.css';document.head.appendChild(l);
+      var s=document.createElement('script');s.src=LL+'leaflet.js';s.onload=res;s.onerror=function(){llReady=null;rej()};
+      document.head.appendChild(s);
+    });
     return llReady;
   }
   function lookup(){
@@ -410,7 +403,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
       setTimeout(function(){map.invalidateSize()},0);
       if(start)map.setView([start.lat,start.lon],18);
       else{map.setView([55.7539,37.6208],11);gotoMe()}
-    },function(){$('mapAddr').textContent=location.protocol==='https:'?'Не удалось загрузить карту. Проверьте интернет и попробуйте ещё раз.':'Карта работает только на сайте. Откройте приложение по ссылке github.io.'});
+    },function(){$('mapAddr').textContent='Не удалось загрузить карту. Проверьте интернет.'});
   }
   function closePicker(){$('mapx').hidden=true;document.body.style.overflow='';pickCb=null}
   $('mapCancel').addEventListener('click',closePicker);
