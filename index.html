@@ -157,6 +157,18 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
 .pin .shadow{position:absolute;bottom:-3px;width:10px;height:4px;border-radius:50%;background:#00000055}
 .mapbtns{display:flex;gap:8px;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-top:1px solid var(--line)}
 .mapbtns .btn{flex:1 1 0;padding:12px 8px}
+.quickbox{display:flex;flex-direction:column;gap:6px}
+.btn.quick{background:var(--fg);color:var(--bg);border-color:var(--fg);min-height:54px;font-size:16px}
+.btn.quick[aria-disabled=true]{opacity:.6;pointer-events:none}
+.chk{flex-direction:row;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted);font-weight:400}
+.chk input{width:18px;height:18px;margin:0;flex:0 0 auto}
+#map2{position:absolute;inset:0;background:#e9eef3}
+.legend{margin:2px 0 0;display:flex;gap:12px;flex-wrap:wrap;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #00000040}
+.pop{display:flex;flex-direction:column;gap:3px;font-family:inherit;font-size:13px;min-width:150px}
+.pop button{font:inherit;font-weight:600;border:0;border-radius:8px;background:#1f5bc4;color:#fff;padding:7px 10px;margin-top:4px;cursor:pointer;text-align:left}
+input.plateEdit{font-family:var(--f-plate);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
 </style>
 
 </head>
@@ -169,6 +181,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
 
   <section class="card" aria-labelledby="newH">
     <h2 id="newH">Новая проверка</h2>
+    <div class="quickbox">
+      <label class="btn quick" for="quickInput" id="quickBtn">Снять машину</label>
+      <input type="file" accept="image/*" capture="environment" class="vh" id="quickInput">
+      <p class="hint" id="quickInfo">Быстрый режим: фото, время и место сохранятся сразу, номер впишете потом.</p>
+    </div>
     <label for="plateInput">Госномер
       <input type="text" id="plateInput" placeholder="А123ВС77" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12">
     </label>
@@ -178,7 +195,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     <div class="field">
       <label for="placeInput">Место</label>
       <div class="inline">
-        <input type="text" id="placeInput" placeholder="ТЦ «Мега», парковка у входа 2">
+        <input type="text" id="placeInput" list="placesDl" placeholder="ТЦ «Мега», парковка у входа 2">
         <button type="button" class="btn small" id="geoBtn">На карте</button>
       </div>
       <p class="geo" id="geoInfo" hidden></p>
@@ -196,6 +213,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
       <button type="button" data-b="unknown" aria-pressed="true">Не смотрел</button>
     </div>
     <div class="pics" id="newPics"></div>
+    <label class="chk"><input type="checkbox" id="stampChk" checked> Накладывать на фото машины дату, время и место</label>
     <a class="btn primary" id="goBtn" href="https://www.gosuslugi.ru/invalidam/check-transport" target="_blank" rel="noopener">Скопировать номер и открыть Госуслуги</a>
     <button class="btn" id="copyOnly" type="button">Только скопировать номер</button>
 
@@ -230,9 +248,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
       <button class="chip" data-f="new" aria-pressed="false">Не отмечены</button>
       <button class="chip" data-f="repeat" aria-pressed="false">Повторные</button>
       <button class="chip" data-f="unpub" aria-pressed="false">Не в блоге</button>
+      <button class="chip" data-f="noplate" aria-pressed="false">Без номера</button>
     </div>
     <div class="list" id="list"></div>
     <div class="row">
+      <button class="btn small" id="allMapBtn">Все случаи на карте</button>
       <button class="btn small ghost" id="exportBtn">Скопировать весь список</button>
     </div>
   </section>
@@ -243,6 +263,12 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
   </footer>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<datalist id="placesDl"></datalist>
+<div class="mapx" id="mapall" hidden role="dialog" aria-label="Все случаи на карте">
+  <div class="mapbar"><p class="maphint" id="allCount"></p><p class="legend"><span><i style="background:#c0352b"></i>Нет в реестре</span><span><i style="background:#1d7a46"></i>В реестре</span><span><i style="background:#8a6a12"></i>Не отмечено</span></p></div>
+  <div class="mapwrap"><div id="map2"></div></div>
+  <div class="mapbtns"><button type="button" class="btn primary" id="allClose">Закрыть</button></div>
+</div>
 <div class="mapx" id="mapx" hidden role="dialog" aria-label="Выбор места на карте">
   <div class="mapbar"><p class="maphint">Двигайте карту, чтобы метка встала на место</p><p class="mapaddr" id="mapAddr"></p></div>
   <div class="mapwrap"><div id="map"></div><div class="pin" id="pin" aria-hidden="true"><svg viewBox="0 0 32 44" width="36" height="50"><path d="M16 0C7.2 0 0 7 0 15.7 0 27.5 16 44 16 44s16-16.5 16-28.3C32 7 24.8 0 16 0z" fill="#c0352b"/><circle cx="16" cy="15.5" r="6.5" fill="#ffffff"/></svg><span class="shadow"></span></div></div>
@@ -311,6 +337,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
   }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function plateHTML(p,size){
+    if(!p)return '<span class="plate '+size+'" aria-label="Номер не указан"><span class="main"><span class="big">?</span></span></span>';
     var m=RE.exec(p);
     if(!m)return '<span class="plate '+size+'"><span class="main"><span class="big">'+esc(p)+'</span></span></span>';
     return '<span class="plate '+size+'" aria-label="Номер '+esc(p)+'"><span class="main"><span class="sm">'+m[1]+'</span><span class="big">'+m[2]+'</span><span class="sm">'+m[3]+'</span></span><span class="reg"><b>'+m[4]+'</b><span class="rus">RUS <span class="flag"></span></span></span></span>';
@@ -322,7 +349,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
   function pretty(p){var m=RE.exec(p);return m?m[1]+' '+m[2]+' '+m[3]+' '+m[4]:p}
   function times(n){var a=n%10,b=n%100;return n+' '+((a>=2&&a<=4&&(b<10||b>=20))?'раза':'раз')}
   var tt;
-  function toast(msg){var el=$('toast');el.textContent=msg;el.hidden=false;clearTimeout(tt);tt=setTimeout(function(){el.hidden=true},2600)}
+  function toast(msg,ms){var el=$('toast');el.textContent=msg;el.hidden=false;clearTimeout(tt);tt=setTimeout(function(){el.hidden=true},ms||2600)}
   function legacyCopy(text){
     var ta=document.createElement('textarea');
     ta.value=text;ta.setAttribute('readonly','');
@@ -356,15 +383,22 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     return Promise.race([f,t]);
   }
   // ---------- map picker (pin in the centre, move the map) ----------
-  var LL='https://unpkg.com/leaflet@1.9.4/dist/',llReady=null,map=null,pickCb=null,pickAddr=null,pickSeq=0,lookT=null;
+  var LLS=['https://unpkg.com/leaflet@1.9.4/dist/','https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/','https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/'];
+  var llReady=null,map=null,pickCb=null,pickAddr=null,pickSeq=0,lookT=null;
+  function loadFrom(i,res,rej){
+    if(i>=LLS.length){rej();return}
+    var base=LLS[i],s=document.createElement('script');
+    s.src=base+'leaflet.js';
+    s.onload=function(){
+      var l=document.createElement('link');l.rel='stylesheet';l.href=base+'leaflet.css';document.head.appendChild(l);res();
+    };
+    s.onerror=function(){s.remove();loadFrom(i+1,res,rej)};
+    document.head.appendChild(s);
+  }
   function loadLeaflet(){
     if(window.L)return Promise.resolve();
     if(llReady)return llReady;
-    llReady=new Promise(function(res,rej){
-      var l=document.createElement('link');l.rel='stylesheet';l.href=LL+'leaflet.css';document.head.appendChild(l);
-      var s=document.createElement('script');s.src=LL+'leaflet.js';s.onload=res;s.onerror=function(){llReady=null;rej()};
-      document.head.appendChild(s);
-    });
+    llReady=new Promise(function(res,rej){loadFrom(0,res,function(){llReady=null;rej()})});
     return llReady;
   }
   function lookup(){
@@ -403,7 +437,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
       setTimeout(function(){map.invalidateSize()},0);
       if(start)map.setView([start.lat,start.lon],18);
       else{map.setView([55.7539,37.6208],11);gotoMe()}
-    },function(){$('mapAddr').textContent='Не удалось загрузить карту. Проверьте интернет.'});
+    },function(){$('mapAddr').textContent=location.protocol==='https:'?'Не удалось загрузить карту. Проверьте интернет и попробуйте ещё раз.':'Карта работает только на сайте. Откройте приложение по ссылке github.io.'});
   }
   function closePicker(){$('mapx').hidden=true;document.body.style.overflow='';pickCb=null}
   $('mapCancel').addEventListener('click',closePicker);
@@ -426,6 +460,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
 
   // ---------- repeat offenders ----------
   function sameplate(plate,exceptId){
+    if(!plate)return [];
     return records.filter(function(x){return !x.example&&x.plate===plate&&x.id!==exceptId})
       .sort(function(a,b){return a.date<b.date?1:-1});
   }
@@ -444,6 +479,38 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
       img.src=url;
     });
   }
+  function stampImage(dataUrl,lines){
+    return new Promise(function(res){
+      var img=new Image();
+      img.onload=function(){
+        var w=img.width,h=img.height,c=document.createElement('canvas');c.width=w;c.height=h;
+        var g=c.getContext('2d');g.drawImage(img,0,0);
+        var fs=Math.max(14,Math.round(w*0.032)),pad=Math.round(fs*0.6),lh=Math.round(fs*1.3);
+        g.font='600 '+fs+'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';g.textBaseline='top';
+        var out=[];
+        lines.filter(Boolean).forEach(function(t){
+          var words=String(t).split(' '),cur='';
+          words.forEach(function(wd){
+            var test=cur?cur+' '+wd:wd;
+            if(g.measureText(test).width>w-2*pad&&cur){out.push(cur);cur=wd}else cur=test;
+          });
+          if(cur)out.push(cur);
+        });
+        if(!out.length){res(dataUrl);return}
+        var bh=out.length*lh+pad*2-Math.round((lh-fs)/2);
+        g.fillStyle='rgba(0,0,0,0.58)';g.fillRect(0,h-bh,w,bh);
+        g.fillStyle='#ffffff';
+        out.forEach(function(t,i){g.fillText(t,pad,h-bh+pad+i*lh)});
+        res(c.toDataURL('image/jpeg',0.72));
+      };
+      img.onerror=function(){res(dataUrl)};
+      img.src=dataUrl;
+    });
+  }
+  function stampLines(o){
+    return [fmtDate(o.date),o.place||'',o.geo?o.geo.lat.toFixed(5)+', '+o.geo.lon.toFixed(5):''];
+  }
+  function stampOn(){return $('stampChk').checked}
   function srcFor(r,slot){
     var k=r.id+':'+slot;
     if(imgCache[k])return imgCache[k];
@@ -478,7 +545,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     if(scope==='new'){newImgs[slot]=d;renderNewPics();return}
     var r=byId(scope);if(!r)return;
     var k=r.id+':'+slot;
-    imgPut(k,d).then(function(){imgCache[k]=d;r[slot]=true;if(slot==='car')delete r.photo;save();render();toast(SLOT[slot]+': сохранено')},
+    var pre=(slot==='car'&&stampOn())?stampImage(d,stampLines(r)):Promise.resolve(d);
+    pre.then(function(x){d=x;return imgPut(k,d)}).then(function(){imgCache[k]=d;r[slot]=true;if(slot==='car')delete r.photo;save();render();toast(SLOT[slot]+': сохранено')},
                      function(){toast('Не удалось сохранить фото. Возможно, память телефона заполнена.')});
   }
   function removeImg(scope,slot){
@@ -537,6 +605,12 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     });
     records=records.filter(function(x){return !x.example});
     records.unshift(r);save();
+    if(r.car&&stampOn()){
+      var rid=r.id,orig=newImgs.car;
+      stampImage(orig,stampLines(r)).then(function(st){
+        var k=rid+':car';imgCache[k]=st;imgPut(k,st).catch(function(){});render();
+      });
+    }
     currentId=r.id;$('current').hidden=false;
     $('plateInput').value='';$('placeInput').value='';$('noteInput').value='';$('dateInput').value='';newGeo=null;autoPlace=null;$('geoInfo').hidden=true;
     newImgs={car:null,shot:null};newBadge='unknown';setSeg($('newBadge'),'unknown');
@@ -562,19 +636,30 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
   });
 
   // ---------- list ----------
-  function render(){
-    var list=$('list');
-    var counts={};records.forEach(function(r){if(!r.example)counts[r.plate]=(counts[r.plate]||0)+1});
-    var rows=records.filter(function(r){
+  function countsMap(){var c={};records.forEach(function(r){if(!r.example&&r.plate)c[r.plate]=(c[r.plate]||0)+1});return c}
+  function visibleRows(counts){
+    return records.filter(function(r){
       if(filter==='all')return true;
-      if(filter==='repeat')return counts[r.plate]>1;
+      if(filter==='repeat')return r.plate&&counts[r.plate]>1;
       if(filter==='unpub')return !r.pub&&!r.example;
+      if(filter==='noplate')return !r.plate;
       return r.status===filter;
     }).filter(function(r){
       if(!query.trim())return true;
       var nq=norm(query),lq=query.trim().toLowerCase();
       return (nq&&r.plate.indexOf(nq)>=0)||(r.place||'').toLowerCase().indexOf(lq)>=0||(r.note||'').toLowerCase().indexOf(lq)>=0;
     }).sort(function(a,b){return a.date<b.date?1:-1});
+  }
+  function updatePlaces(){
+    var f={};records.forEach(function(r){var p=(r.place||'').trim();if(p)f[p]=(f[p]||0)+1});
+    var list=Object.keys(f).sort(function(a,b){return f[b]-f[a]||a.localeCompare(b,'ru')}).slice(0,40);
+    $('placesDl').innerHTML=list.map(function(p){return '<option value="'+esc(p)+'"></option>'}).join('');
+  }
+  function render(){
+    var list=$('list');
+    var counts=countsMap();
+    var rows=visibleRows(counts);
+    updatePlaces();
     if(!rows.length){list.innerHTML='<div class="empty">'+(query.trim()?'Ничего не найдено.':records.length?'В этом фильтре пусто.':'Пока ни одной проверки. Введите номер выше.')+'</div>'}
     else list.innerHTML=rows.map(function(r){
       var open=r.id===openId,n=counts[r.plate]||0;
@@ -587,7 +672,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
         h+='<div class="body">';
         h+='<div class="pics">'+pickHTML('l',r.id,'car',srcFor(r,'car'))+pickHTML('l',r.id,'shot',srcFor(r,'shot'))+'</div>';
         h+='<div class="edit">'+
-          '<div class="field"><label for="pl-'+r.id+'">Место</label><div class="inline"><input type="text" id="pl-'+r.id+'" data-f="place" value="'+esc(r.place||'')+'" placeholder="Где стояла машина"><button type="button" class="btn small" data-act="geo">На карте</button></div>'+
+          '<label for="pn-'+r.id+'">Госномер<input type="text" id="pn-'+r.id+'" class="plateEdit" data-f="plate" value="'+esc(r.plate||'')+'" placeholder="А123ВС77" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12"></label>'+
+          '<div class="field"><label for="pl-'+r.id+'">Место</label><div class="inline"><input type="text" id="pl-'+r.id+'" data-f="place" list="placesDl" value="'+esc(r.place||'')+'" placeholder="Где стояла машина"><button type="button" class="btn small" data-act="geo">На карте</button></div>'+
           (r.geo?'<p class="geo">'+geoHTML(r.geo)+'</p>':'')+'</div>'+
           '<label for="nt-'+r.id+'">Заметка<textarea id="nt-'+r.id+'" data-f="note" placeholder="Что важно запомнить">'+esc(r.note||'')+'</textarea></label>'+
           '<label for="dt-'+r.id+'">Дата и время<input type="datetime-local" id="dt-'+r.id+'" data-f="date" value="'+toLocalInput(r.date)+'"></label>'+
@@ -612,7 +698,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     var item=t.closest('.item'),id=item&&item.dataset.id,r=byId(id);if(!r)return;
     var a=t.dataset.act;
     if(a==='toggle'){openId=openId===id?null:id;confirmId=null;pickConfirm=null;render();return}
-    if(a==='recheck'){copy(r.plate,'Номер '+r.plate+' скопирован. Вставьте его на сайте.');currentId=id;$('current').hidden=false;renderCurrent();return}
+    if(a==='recheck'){if(!r.plate){e.preventDefault();toast('Сначала впишите номер');var pi=item.querySelector('[data-f=plate]');if(pi)pi.focus();return}copy(r.plate,'Номер '+r.plate+' скопирован. Вставьте его на сайте.');currentId=id;$('current').hidden=false;renderCurrent();return}
     if(a==='badge'){r.badge=t.dataset.b;save();render();return}
     if(a==='pub'){r.pub=!r.pub;save();render();toast(r.pub?'Отмечено: опубликовано':'Отметка снята');return}
     if(a==='geo'){openPicker(r.geo,function(g,addr){r.geo=g;if(addr&&(!(r.place||'').trim()||r.place===r.autoPlace)){r.place=addr;r.autoPlace=addr}save();render();toast(addr?'Место отмечено':'Адрес не найден, точка сохранена')});return}
@@ -630,6 +716,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     var t=e.target,item=t.closest&&t.closest('.item');if(!item||!t.dataset)return;
     var r=byId(item.dataset.id);if(!r)return;
     var f=t.dataset.f;if(!f)return;
+    if(f==='plate'){r.plate=norm(t.value);save();render();toast(r.plate?'Номер сохранён':'Номер убран');return}
     if(f==='date'){var d=fromLocalInput(t.value);if(d){r.date=d;save();render();toast('Дата изменена')}return}
     r[f]=t.value.trim();save();
     if(f==='place'){var pl=item.querySelector('.head .place');if(pl&&pl.firstChild)pl.firstChild.nodeValue=r.place||'Место не указано'}
@@ -640,6 +727,88 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     if(!real.length){toast('Список пока пуст');return}
     var txt=real.map(function(r){return pretty(r.plate)+' | '+fmtDate(r.date)+' | '+(r.place||'—')+' | '+STATUS[r.status]+' | '+BADGE[r.badge||'unknown']+(r.pub?' | в блоге':'')+(r.geo?' | '+r.geo.lat.toFixed(5)+','+r.geo.lon.toFixed(5):'')+(r.note?' | '+r.note:'')}).join('\n');
     copy(txt,'Список скопирован ('+real.length+')');
+  });
+
+  // ---------- stamp setting ----------
+  try{if(localStorage.getItem('fgis-fri-stamp')==='0')$('stampChk').checked=false}catch(e){}
+  $('stampChk').addEventListener('change',function(){try{localStorage.setItem('fgis-fri-stamp',this.checked?'1':'0')}catch(e){}});
+
+  // ---------- quick mode: photo first, plate later ----------
+  function setFilter(f){
+    filter=f;
+    document.querySelectorAll('.chip').forEach(function(c){c.setAttribute('aria-pressed',c.dataset.f===f?'true':'false')});
+  }
+  function getFix(){
+    return new Promise(function(res){
+      if(!navigator.geolocation){res(null);return}
+      navigator.geolocation.getCurrentPosition(function(p){res({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy})},function(){res(null)},{enableHighAccuracy:true,timeout:9000,maximumAge:30000});
+    });
+  }
+  var QUICK_HINT='Быстрый режим: фото, время и место сохранятся сразу, номер впишете потом.';
+  $('quickInput').addEventListener('change',function(){
+    var f=this.files&&this.files[0];this.value='';if(!f)return;
+    var when=new Date().toISOString(),btn=$('quickBtn'),info=$('quickInfo');
+    btn.setAttribute('aria-disabled','true');info.textContent='Сохраняю фото и определяю место…';
+    Promise.all([compress(f,'car'),getFix()]).then(function(v){
+      var d=v[0],g=v[1];
+      return (g?reverse(g):Promise.resolve(null)).then(function(addr){return {d:d,g:g,addr:addr}});
+    }).then(function(v){
+      var r={id:'r'+Date.now(),plate:'',place:v.addr||'',autoPlace:v.addr||null,note:'',status:'new',badge:'unknown',date:when,car:true,shot:false,geo:v.g,pub:false};
+      var pre=stampOn()?stampImage(v.d,stampLines(r)):Promise.resolve(v.d);
+      return pre.then(function(x){var k=r.id+':car';imgCache[k]=x;return imgPut(k,x)}).then(function(){
+        records=records.filter(function(x){return !x.example});
+        records.unshift(r);save();
+        setFilter('all');query='';$('search').value='';openId=r.id;render();
+        setTimeout(function(){
+          var el=document.querySelector('.item[data-id="'+r.id+'"]');
+          if(el){el.scrollIntoView({behavior:'smooth',block:'start'});var pi=el.querySelector('[data-f=plate]');if(pi)pi.focus()}
+        },60);
+        toast(v.g?'Сохранено. Впишите номер.':'Сохранено без места. Впишите номер.',3500);
+      });
+    }).catch(function(){toast('Не удалось сохранить фото. Попробуйте ещё раз.')}).then(function(){
+      btn.removeAttribute('aria-disabled');info.textContent=QUICK_HINT;
+    });
+  });
+
+  // ---------- all cases on the map ----------
+  var map2=null,grp=null;
+  function closeAll(){$('mapall').hidden=true;document.body.style.overflow=''}
+  $('allClose').addEventListener('click',closeAll);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('mapall').hidden)closeAll()});
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-open]');if(!b)return;
+    var id=b.dataset.open;closeAll();openId=id;confirmId=null;render();
+    setTimeout(function(){var el=document.querySelector('.item[data-id="'+id+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},60);
+  });
+  $('allMapBtn').addEventListener('click',function(){
+    var rows=visibleRows(countsMap()),pts=rows.filter(function(r){return r.geo});
+    if(!pts.length){toast('Нет записей с отмеченным местом',3000);return}
+    $('mapall').hidden=false;document.body.style.overflow='hidden';
+    $('allCount').textContent='Загрузка карты…';
+    loadLeaflet().then(function(){
+      if(!map2){
+        map2=L.map('map2');
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map2);
+        map2.attributionControl.setPrefix(false);grp=L.layerGroup().addTo(map2);
+      }
+      grp.clearLayers();
+      var colors={violator:'#c0352b',ok:'#1d7a46',new:'#8a6a12'},groups={},order=[];
+      pts.forEach(function(r){
+        var k=r.geo.lat.toFixed(4)+','+r.geo.lon.toFixed(4);
+        if(!groups[k]){groups[k]={lat:r.geo.lat,lon:r.geo.lon,list:[]};order.push(k)}
+        groups[k].list.push(r);
+      });
+      var ll=[];
+      order.forEach(function(k){
+        var g=groups[k],n=g.list.length,top=g.list[0];
+        var m=L.circleMarker([g.lat,g.lon],{radius:11+Math.min(n-1,4)*3,color:'#ffffff',weight:3,fillColor:colors[top.status]||colors.new,fillOpacity:1}).addTo(grp);
+        var html='<div class="pop"><b>'+(n>1?n+' '+(n<5?'случая':'случаев')+' здесь':'Случай')+'</b>'+g.list.slice(0,8).map(function(r){
+          return '<button type="button" data-open="'+r.id+'">'+esc(r.plate?pretty(r.plate):'Номер не указан')+' · '+fmtDate(r.date)+'</button>'}).join('')+'</div>';
+        m.bindPopup(html);ll.push([g.lat,g.lon]);
+      });
+      setTimeout(function(){map2.invalidateSize();if(ll.length===1)map2.setView(ll[0],17);else map2.fitBounds(ll,{padding:[40,40],maxZoom:17})},0);
+      $('allCount').textContent='На карте: '+pts.length+' из '+rows.length+(rows.length!==records.length?' (по текущему фильтру)':'');
+    },function(){$('allCount').textContent=location.protocol==='https:'?'Не удалось загрузить карту. Проверьте интернет.':'Карта работает только на сайте github.io.'});
   });
 
   $('search').addEventListener('input',function(){query=this.value;render()});
