@@ -144,6 +144,19 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
 .edit textarea{min-height:64px}
 #search{font-size:15px}
 .opt{font-weight:400}
+.mapx{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column}
+.mapbar{padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.maphint{margin:0;font-size:12.5px;color:var(--muted)}
+.mapaddr{margin:0;font-size:16px;font-weight:600;min-height:1.45em}
+.mapwrap{position:relative;flex:1 1 auto;min-height:0}
+#map{position:absolute;inset:0;background:#e9eef3}
+.pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);z-index:500;pointer-events:none;display:flex;flex-direction:column;align-items:center}
+.pin svg{display:block;filter:drop-shadow(0 2px 2px #00000040)}
+@media (prefers-reduced-motion:no-preference){.pin svg{transition:transform .15s}}
+.pin.up svg{transform:translateY(-10px)}
+.pin .shadow{position:absolute;bottom:-3px;width:10px;height:4px;border-radius:50%;background:#00000055}
+.mapbtns{display:flex;gap:8px;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-top:1px solid var(--line)}
+.mapbtns .btn{flex:1 1 0;padding:12px 8px}
 </style>
 
 </head>
@@ -166,7 +179,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
       <label for="placeInput">Место</label>
       <div class="inline">
         <input type="text" id="placeInput" placeholder="ТЦ «Мега», парковка у входа 2">
-        <button type="button" class="btn small" id="geoBtn">Где я</button>
+        <button type="button" class="btn small" id="geoBtn">На карте</button>
       </div>
       <p class="geo" id="geoInfo" hidden></p>
     </div>
@@ -230,6 +243,11 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
   </footer>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="mapx" id="mapx" hidden role="dialog" aria-label="Выбор места на карте">
+  <div class="mapbar"><p class="maphint">Двигайте карту, чтобы метка встала на место</p><p class="mapaddr" id="mapAddr"></p></div>
+  <div class="mapwrap"><div id="map"></div><div class="pin" id="pin" aria-hidden="true"><svg viewBox="0 0 32 44" width="36" height="50"><path d="M16 0C7.2 0 0 7 0 15.7 0 27.5 16 44 16 44s16-16.5 16-28.3C32 7 24.8 0 16 0z" fill="#c0352b"/><circle cx="16" cy="15.5" r="6.5" fill="#ffffff"/></svg><span class="shadow"></span></div></div>
+  <div class="mapbtns"><button type="button" class="btn" id="mapMe">Я здесь</button><button type="button" class="btn" id="mapCancel">Отмена</button><button type="button" class="btn primary" id="mapOk">Готово</button></div>
+</div>
 <div class="viewer" id="viewer" hidden><img id="viewerImg" alt="Просмотр фото"><button type="button" id="viewerClose">Закрыть</button></div>
 
 <script>
@@ -325,7 +343,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
 
   // ---------- geolocation ----------
   function mapLink(g){return 'https://yandex.ru/maps/?pt='+g.lon+','+g.lat+'&z=17&l=map'}
-  function geoHTML(g){return 'Координаты: '+g.lat.toFixed(5)+', '+g.lon.toFixed(5)+(g.acc?' (точность ~'+Math.round(g.acc)+' м)':'')+' · <a href="'+mapLink(g)+'" target="_blank" rel="noopener">На карте</a>'}
+  function geoHTML(g){return 'Координаты: '+g.lat.toFixed(5)+', '+g.lon.toFixed(5)+(g.manual?' (отмечено на карте)':g.acc?' (точность ~'+Math.round(g.acc)+' м)':'')+' · <a href="'+mapLink(g)+'" target="_blank" rel="noopener">Открыть в Яндекс Картах</a>'}
   function reverse(g){
     var t=new Promise(function(res){setTimeout(function(){res(null)},7000)});
     var f=fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ru&zoom=18&lat='+g.lat+'&lon='+g.lon)
@@ -337,24 +355,79 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
       }).catch(function(){return null});
     return Promise.race([f,t]);
   }
-  function locate(btn,cb){
-    if(!navigator.geolocation){toast('Этот браузер не умеет определять место.');return}
-    var old=btn.textContent;btn.textContent='Ищу…';btn.disabled=true;
-    navigator.geolocation.getCurrentPosition(function(pos){
-      var g={lat:pos.coords.latitude,lon:pos.coords.longitude,acc:pos.coords.accuracy};
-      reverse(g).then(function(addr){btn.textContent=old;btn.disabled=false;cb(g,addr)});
-    },function(){
-      btn.textContent=old;btn.disabled=false;
-      toast('Не удалось определить место. Разрешите доступ к геолокации для этого сайта и включите GPS.');
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+  // ---------- map picker (pin in the centre, move the map) ----------
+  var LLS=['https://unpkg.com/leaflet@1.9.4/dist/','https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/','https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/'];
+  var llReady=null,map=null,pickCb=null,pickAddr=null,pickSeq=0,lookT=null;
+  function loadFrom(i,res,rej){
+    if(i>=LLS.length){rej();return}
+    var base=LLS[i],s=document.createElement('script');
+    s.src=base+'leaflet.js';
+    s.onload=function(){
+      var l=document.createElement('link');l.rel='stylesheet';l.href=base+'leaflet.css';document.head.appendChild(l);res();
+    };
+    s.onerror=function(){s.remove();loadFrom(i+1,res,rej)};
+    document.head.appendChild(s);
   }
+  function loadLeaflet(){
+    if(window.L)return Promise.resolve();
+    if(llReady)return llReady;
+    llReady=new Promise(function(res,rej){loadFrom(0,res,function(){llReady=null;rej()})});
+    return llReady;
+  }
+  function lookup(){
+    clearTimeout(lookT);
+    var c=map.getCenter(),seq=++pickSeq;pickAddr=null;
+    $('mapAddr').textContent='Определяю адрес…';
+    lookT=setTimeout(function(){
+      reverse({lat:c.lat,lon:c.lng}).then(function(a){
+        if(seq!==pickSeq)return;pickAddr=a;
+        $('mapAddr').textContent=a||('Адрес не найден · '+c.lat.toFixed(5)+', '+c.lng.toFixed(5));
+      });
+    },700);
+  }
+  function gotoMe(){
+    if(!navigator.geolocation){toast('Этот браузер не умеет определять место. Поставьте метку вручную.');return}
+    var b=$('mapMe');b.disabled=true;b.textContent='Ищу…';
+    navigator.geolocation.getCurrentPosition(function(p){
+      b.disabled=false;b.textContent='Я здесь';
+      if(map)map.setView([p.coords.latitude,p.coords.longitude],18);
+    },function(){
+      b.disabled=false;b.textContent='Я здесь';
+      toast('Не удалось определить место. Разрешите геолокацию или поставьте метку вручную.');
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+  }
+  function openPicker(start,cb){
+    pickCb=cb;pickAddr=null;$('mapx').hidden=false;document.body.style.overflow='hidden';
+    $('mapAddr').textContent='Загрузка карты…';
+    loadLeaflet().then(function(){
+      if(!map){
+        map=L.map('map',{zoomControl:true});
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+        map.attributionControl.setPrefix(false);
+        map.on('movestart',function(){$('pin').classList.add('up');pickSeq++;$('mapAddr').textContent='…'});
+        map.on('moveend',function(){$('pin').classList.remove('up');lookup()});
+      }
+      setTimeout(function(){map.invalidateSize()},0);
+      if(start)map.setView([start.lat,start.lon],18);
+      else{map.setView([55.7539,37.6208],11);gotoMe()}
+    },function(){$('mapAddr').textContent=location.protocol==='https:'?'Не удалось загрузить карту. Проверьте интернет и попробуйте ещё раз.':'Карта работает только на сайте. Откройте приложение по ссылке github.io.'});
+  }
+  function closePicker(){$('mapx').hidden=true;document.body.style.overflow='';pickCb=null}
+  $('mapCancel').addEventListener('click',closePicker);
+  $('mapMe').addEventListener('click',gotoMe);
+  $('mapOk').addEventListener('click',function(){
+    if(!map||!pickCb){closePicker();return}
+    var c=map.getCenter(),cb=pickCb,addr=pickAddr;closePicker();
+    cb({lat:c.lat,lon:c.lng,acc:null,manual:true},addr);
+  });
+
   $('geoBtn').addEventListener('click',function(){
-    locate($('geoBtn'),function(g,addr){
+    openPicker(newGeo,function(g,addr){
       newGeo=g;
       var pl=$('placeInput');
       if(addr&&(!pl.value.trim()||pl.value===autoPlace)){pl.value=addr;autoPlace=addr}
       $('geoInfo').innerHTML=geoHTML(g);$('geoInfo').hidden=false;
-      toast(addr?'Место определено':'Адрес не найден, координаты сохранены');
+      toast(addr?'Место отмечено':'Адрес не найден, точка сохранена');
     });
   });
 
@@ -521,7 +594,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
         h+='<div class="body">';
         h+='<div class="pics">'+pickHTML('l',r.id,'car',srcFor(r,'car'))+pickHTML('l',r.id,'shot',srcFor(r,'shot'))+'</div>';
         h+='<div class="edit">'+
-          '<div class="field"><label for="pl-'+r.id+'">Место</label><div class="inline"><input type="text" id="pl-'+r.id+'" data-f="place" value="'+esc(r.place||'')+'" placeholder="Где стояла машина"><button type="button" class="btn small" data-act="geo">Где я</button></div>'+
+          '<div class="field"><label for="pl-'+r.id+'">Место</label><div class="inline"><input type="text" id="pl-'+r.id+'" data-f="place" value="'+esc(r.place||'')+'" placeholder="Где стояла машина"><button type="button" class="btn small" data-act="geo">На карте</button></div>'+
           (r.geo?'<p class="geo">'+geoHTML(r.geo)+'</p>':'')+'</div>'+
           '<label for="nt-'+r.id+'">Заметка<textarea id="nt-'+r.id+'" data-f="note" placeholder="Что важно запомнить">'+esc(r.note||'')+'</textarea></label>'+
           '<label for="dt-'+r.id+'">Дата и время<input type="datetime-local" id="dt-'+r.id+'" data-f="date" value="'+toLocalInput(r.date)+'"></label>'+
@@ -549,7 +622,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     if(a==='recheck'){copy(r.plate,'Номер '+r.plate+' скопирован. Вставьте его на сайте.');currentId=id;$('current').hidden=false;renderCurrent();return}
     if(a==='badge'){r.badge=t.dataset.b;save();render();return}
     if(a==='pub'){r.pub=!r.pub;save();render();toast(r.pub?'Отмечено: опубликовано':'Отметка снята');return}
-    if(a==='geo'){locate(t,function(g,addr){r.geo=g;if(addr&&!(r.place||'').trim())r.place=addr;save();render();toast(addr?'Место определено':'Адрес не найден, координаты сохранены')});return}
+    if(a==='geo'){openPicker(r.geo,function(g,addr){r.geo=g;if(addr&&(!(r.place||'').trim()||r.place===r.autoPlace)){r.place=addr;r.autoPlace=addr}save();render();toast(addr?'Место отмечено':'Адрес не найден, точка сохранена')});return}
     if(a==='violator'||a==='ok'){mark(id,a);return}
     if(a==='del'){confirmId=id;render();return}
     if(a==='del-no'){confirmId=null;render();return}
