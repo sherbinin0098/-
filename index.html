@@ -3,10 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f5bc4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Проверка авто">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f5bc4'/%3E%3Ctext x='32' y='45' font-size='38' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <title>Проверка авто в ФГИС ФРИ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,8 +43,10 @@ header p{margin:4px 0 0;color:var(--muted);font-size:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
 .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0;font-weight:600}
 label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
-input[type=text],textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
-input[type=text]:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+select{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+input[type=search],input[type=datetime-local],input[type=text],textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+input[type=search]:focus,input[type=datetime-local]:focus,input[type=text]:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
 #plateInput{font-family:var(--f-plate);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
 .hint{font-size:12.5px;color:var(--muted);margin:0}
 .err{color:var(--bad)}
@@ -61,12 +66,18 @@ input[type=text]:focus,textarea:focus{outline:2px solid var(--accent);outline-of
 .btn{font:inherit;font-weight:600;font-size:15px;border-radius:11px;padding:12px 14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px}
 .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-.btn.primary[aria-disabled=true]{opacity:.45;pointer-events:none}
 .btn.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
 .btn.good{background:var(--good-soft);color:var(--good);border-color:transparent}
 .btn.small{min-height:36px;padding:7px 11px;font-size:13.5px;flex:0 0 auto}
 .btn.ghost{background:transparent}
 .btn.danger{color:var(--bad)}
+.seg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.seg .sl{font-size:13px;color:var(--muted);font-weight:500;margin-right:2px}
+.seg button{font:inherit;font-size:13.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:6px 12px;min-height:34px;cursor:pointer}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg button[aria-pressed=true][data-b=yes]{background:var(--good-soft);color:var(--good);border-color:transparent}
+.seg button[aria-pressed=true][data-b=no]{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.seg button[aria-pressed=true][data-b=unknown]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .photoPick{display:flex;align-items:center;gap:12px}
 .photoPick img{width:72px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 input[type=file]{font-size:13px;color:var(--muted);max-width:100%}
@@ -80,7 +91,9 @@ details.how ol{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:col
 .chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .list{display:flex;flex-direction:column;gap:10px}
 .item{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.item>button.head{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;cursor:pointer}
+.item>button.head{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;padding:12px;cursor:pointer}
+.item>button.head .plate{grid-row:span 2}
+.item>button.head .pill{grid-column:2;justify-self:start}
 .item>button.head:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .meta{min-width:0;display:flex;flex-direction:column;gap:2px}
 .meta .place{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -99,6 +112,38 @@ details.how ol{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:col
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;max-width:calc(100% - 32px);text-align:center;z-index:20}
 footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:8px}
 @media (prefers-reduced-motion:no-preference){.btn,.chip{transition:background-color .15s,transform .1s}.btn:active{transform:scale(.98)}}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pick{display:flex;flex-direction:column;gap:8px;min-width:0}
+.pick .ttl{font-size:13px;color:var(--muted);font-weight:500}
+.pick .frame{aspect-ratio:1/1;max-width:100%;border:1px dashed var(--line);border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:12.5px;text-align:center;padding:6px}
+.pick .frame.has{padding:0;border-style:solid}
+.pick .frame img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block}
+.pick .acts{display:flex;gap:6px;flex-wrap:wrap}
+.pick .acts .btn{flex:1 1 auto;padding:7px 8px}
+.repeat{background:var(--wait-soft);border-radius:12px;padding:10px 12px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.repeat b{color:var(--wait)}
+.repeat ul{margin:0;padding-left:18px;font-size:13px;color:var(--fg)}
+.rep{font-size:12px;font-weight:600;color:var(--bad)}
+.others{font-size:13px;color:var(--muted);margin:0;padding-left:18px}
+.current .done{align-self:flex-start}
+.viewer{position:fixed;inset:0;background:#000000eb;z-index:30;display:flex;align-items:center;justify-content:center;padding:calc(56px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.viewer img{max-width:100%;max-height:100%;object-fit:contain}
+.viewer button{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));font:inherit;font-weight:600;background:#ffffff;color:#111111;border:0;border-radius:10px;padding:9px 14px;cursor:pointer}
+.inline{display:flex;gap:8px;align-items:stretch}
+.inline input{flex:1 1 auto;min-width:0}
+.inline .btn{flex:0 0 auto}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label{display:block}
+.geo{font-size:12.5px;color:var(--muted);margin:0}
+.geo a{color:var(--accent)}
+.flags{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pubt{font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:1px 6px}
+.btn.small[data-act=pub][aria-pressed=true]{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.edit{display:flex;flex-direction:column;gap:10px}
+.edit textarea{min-height:64px}
+#search{font-size:15px}
+.opt{font-weight:400}
 </style>
 
 </head>
@@ -116,19 +161,30 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     </label>
     <div class="preview" id="preview"><span class="ph">Здесь появится номер</span></div>
     <p class="hint" id="plateHint">Можно латиницей: A123BC77 превратится в А123ВС77.</p>
-    <label for="placeInput">Место
-      <input type="text" id="placeInput" placeholder="ТЦ «Мега», парковка у входа 2">
-    </label>
+    <div class="repeat" id="repeat" hidden></div>
+    <div class="field">
+      <label for="placeInput">Место</label>
+      <div class="inline">
+        <input type="text" id="placeInput" placeholder="ТЦ «Мега», парковка у входа 2">
+        <button type="button" class="btn small" id="geoBtn">Где я</button>
+      </div>
+      <p class="geo" id="geoInfo" hidden></p>
+    </div>
     <label for="noteInput">Заметка
       <input type="text" id="noteInput" placeholder="Знака на стекле нет, стоит с 10:40">
     </label>
-    <div class="photoPick">
-      <img id="photoThumb" alt="Фото машины" hidden>
-      <label for="photoInput" style="flex:1">Фото машины (по желанию)
-        <input type="file" id="photoInput" accept="image/*">
-      </label>
+    <label for="dateInput">Дата и время <span class="opt">(если не сейчас)</span>
+      <input type="datetime-local" id="dateInput">
+    </label>
+    <div class="seg" id="newBadge" role="group" aria-label="Знак Инвалид на машине">
+      <span class="sl">Знак «Инвалид»:</span>
+      <button type="button" data-b="yes" aria-pressed="false">Да</button>
+      <button type="button" data-b="no" aria-pressed="false">Нет</button>
+      <button type="button" data-b="unknown" aria-pressed="true">Не смотрел</button>
     </div>
-    <a class="btn primary" id="goBtn" href="https://www.gosuslugi.ru/invalidam/check-transport" target="_blank" rel="noopener" aria-disabled="true">Скопировать номер и открыть Госуслуги</a>
+    <div class="pics" id="newPics"></div>
+    <a class="btn primary" id="goBtn" href="https://www.gosuslugi.ru/invalidam/check-transport" target="_blank" rel="noopener">Скопировать номер и открыть Госуслуги</a>
+    <button class="btn" id="copyOnly" type="button">Только скопировать номер</button>
 
     <div class="current" id="current" hidden>
       <p><b>Что показал сайт по номеру <span id="curPlate"></span>?</b></p>
@@ -136,7 +192,8 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
         <button class="btn bad" id="markBad">Нет в реестре</button>
         <button class="btn good" id="markOk">Есть в реестре</button>
       </div>
-      <p class="hint">Отметку можно поменять позже в списке.</p>
+      <div class="pics" id="curPics"></div>
+      <button class="btn small done" id="curDone" type="button">Готово</button>
     </div>
 
     <details class="how" id="how">
@@ -145,18 +202,21 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
         <li>Нажмите синюю кнопку: номер скопируется, откроется страница Госуслуг.</li>
         <li>На сайте долго нажмите на поле номера и выберите «Вставить», затем «Проверить». Если сайт попросит войти, войдите через Госуслуги.</li>
         <li>Когда появится результат, сделайте скриншот. iPhone: боковая кнопка + громкость вверх. Android: питание + громкость вниз.</li>
-        <li>Вернитесь сюда и отметьте результат.</li>
+        <li>Вернитесь сюда, отметьте результат и прикрепите скриншот. Добавить или заменить фото можно и позже, в списке.</li>
       </ol>
     </details>
   </section>
 
   <section class="card" aria-labelledby="logH">
     <h2 id="logH">Проверенные машины</h2>
+    <input type="search" id="search" placeholder="Поиск по номеру или месту" aria-label="Поиск по номеру или месту" autocomplete="off">
     <div class="filters" role="group" aria-label="Фильтр">
       <button class="chip" data-f="all" aria-pressed="true">Все</button>
       <button class="chip" data-f="violator" aria-pressed="false">Нарушители</button>
       <button class="chip" data-f="ok" aria-pressed="false">В реестре</button>
       <button class="chip" data-f="new" aria-pressed="false">Не отмечены</button>
+      <button class="chip" data-f="repeat" aria-pressed="false">Повторные</button>
+      <button class="chip" data-f="unpub" aria-pressed="false">Не в блоге</button>
     </div>
     <div class="list" id="list"></div>
     <div class="row">
@@ -170,27 +230,62 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
   </footer>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="viewer" id="viewer" hidden><img id="viewerImg" alt="Просмотр фото"><button type="button" id="viewerClose">Закрыть</button></div>
 
 <script>
 (function(){
   var KEY='fgis-fri-checks-v1';
   var LAT={A:'А',B:'В',E:'Е',K:'К',M:'М',H:'Н',O:'О',P:'Р',C:'С',T:'Т',Y:'У',X:'Х'};
   var RE=/^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
+  var BADGE={yes:'знак есть',no:'знака нет',unknown:'знак не смотрел'};
   var STATUS={violator:'Нет в реестре',ok:'В реестре',new:'Не отмечено'};
+  var SLOT={car:'Фото машины',shot:'Скриншот проверки'};
+  var EMPTY={car:'Нет фото',shot:'Нет скриншота'};
+  var SIZE={car:[1000,0.65],shot:[1500,0.72]};
   var $=function(id){return document.getElementById(id)};
-  var records=[],filter='all',openId=null,confirmId=null,photoData=null,currentId=null;
+  var records=[],filter='all',openId=null,confirmId=null,currentId=null,newBadge='unknown';
+  var newImgs={car:null,shot:null},imgCache={},pending={},pickConfirm=null,newGeo=null,autoPlace=null,query='';
+
+  // ---------- image storage (IndexedDB) ----------
+  var dbp=null;
+  function db(){
+    if(!dbp)dbp=new Promise(function(res,rej){
+      try{var q=indexedDB.open('fgis-fri-img',1);
+        q.onupgradeneeded=function(){q.result.createObjectStore('img')};
+        q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)};
+      }catch(e){rej(e)}
+    });
+    return dbp;
+  }
+  function tx(mode,fn){
+    return db().then(function(d){return new Promise(function(res,rej){
+      var t=d.transaction('img',mode),r=fn(t.objectStore('img'));
+      t.oncomplete=function(){res(r&&r.result)};t.onerror=function(){rej(t.error)};t.onabort=function(){rej(t.error)};
+    })});
+  }
+  function imgPut(k,v){return tx('readwrite',function(s){return s.put(v,k)})}
+  function imgGet(k){return tx('readonly',function(s){return s.get(k)})}
+  function imgDel(k){return tx('readwrite',function(s){return s.delete(k)})}
 
   function load(){
-    try{var s=localStorage.getItem(KEY);if(s){records=JSON.parse(s)||[];return}}catch(e){}
+    try{var s=localStorage.getItem(KEY);if(s){records=JSON.parse(s)||[];migrate();return}}catch(e){}
     var now=Date.now();
     records=[
       {id:'ex1',plate:'М482КО199',place:'ТЦ «Мега», вход 2',note:'Знака на стекле нет',status:'violator',date:new Date(now-864e5).toISOString(),example:true},
       {id:'ex2',plate:'Т015РА77',place:'Поликлиника №3',note:'',status:'ok',date:new Date(now-3*864e5).toISOString(),example:true}
     ];
   }
+  function migrate(){
+    records.forEach(function(r){
+      if(typeof r.photo==='string'&&r.photo){
+        var k=r.id+':car',d=r.photo;imgCache[k]=d;
+        imgPut(k,d).then(function(){delete r.photo;r.car=true;save()},function(){});
+      }
+    });
+  }
   function save(){
     try{localStorage.setItem(KEY,JSON.stringify(records));return true}
-    catch(e){toast('Не удалось сохранить: память браузера заполнена. Удалите старые записи с фото.');return false}
+    catch(e){toast('Не удалось сохранить: память браузера заполнена.');return false}
   }
   function norm(v){
     v=(v||'').toUpperCase().replace(/[\s\-]/g,'');
@@ -207,74 +302,191 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})+', '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
   }
   function pretty(p){var m=RE.exec(p);return m?m[1]+' '+m[2]+' '+m[3]+' '+m[4]:p}
-  function postText(r){
-    var d=new Date(r.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
-    var t='Автомобиль '+pretty(r.plate)+' занял место для инвалидов';
-    if(r.place)t+=' ('+r.place+')';
-    t+=', '+d+'.';
-    if(r.status==='violator')t+='\nПо данным проверки на Госуслугах (ФГИС ФРИ), машина в федеральном реестре инвалидов не числится.';
-    else if(r.status==='ok')t+='\nПо данным проверки на Госуслугах (ФГИС ФРИ), машина есть в федеральном реестре инвалидов.';
-    else t+='\nПроверка в ФГИС ФРИ: результат пока не отмечен.';
-    if(r.note)t+='\n'+r.note;
-    t+='\nСкриншот проверки прилагаю.';
-    return t;
-  }
+  function times(n){var a=n%10,b=n%100;return n+' '+((a>=2&&a<=4&&(b<10||b>=20))?'раза':'раз')}
   var tt;
   function toast(msg){var el=$('toast');el.textContent=msg;el.hidden=false;clearTimeout(tt);tt=setTimeout(function(){el.hidden=true},2600)}
-  function copy(text,okMsg,fallbackEl){
-    try{
-      navigator.clipboard.writeText(text).then(function(){toast(okMsg)},function(){fallback()});
-    }catch(e){fallback()}
-    function fallback(){
-      if(fallbackEl){fallbackEl.focus();fallbackEl.select&&fallbackEl.select()}
-      toast('Не получилось скопировать сами. Выделите текст и скопируйте вручную.');
-    }
+  function legacyCopy(text){
+    var ta=document.createElement('textarea');
+    ta.value=text;ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,text.length);
+    var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+    document.body.removeChild(ta);return ok;
+  }
+  function copy(text,okMsg){
+    if(legacyCopy(text)){toast(okMsg);return}
+    try{navigator.clipboard.writeText(text).then(function(){toast(okMsg)},function(){toast('Не удалось скопировать. Номер: '+text)})}
+    catch(e){toast('Не удалось скопировать. Номер: '+text)}
+  }
+  function byId(id){return records.find(function(x){return x.id===id})}
+  function pad(n){return (n<10?'0':'')+n}
+  function toLocalInput(iso){var d=new Date(iso);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
+  function fromLocalInput(v){var d=new Date(v);return isNaN(d)?null:d.toISOString()}
+
+  // ---------- geolocation ----------
+  function mapLink(g){return 'https://yandex.ru/maps/?pt='+g.lon+','+g.lat+'&z=17&l=map'}
+  function geoHTML(g){return 'Координаты: '+g.lat.toFixed(5)+', '+g.lon.toFixed(5)+(g.acc?' (точность ~'+Math.round(g.acc)+' м)':'')+' · <a href="'+mapLink(g)+'" target="_blank" rel="noopener">На карте</a>'}
+  function reverse(g){
+    var t=new Promise(function(res){setTimeout(function(){res(null)},7000)});
+    var f=fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ru&zoom=18&lat='+g.lat+'&lon='+g.lon)
+      .then(function(r){return r.ok?r.json():null}).then(function(j){
+        if(!j||!j.address)return null;var a=j.address;
+        var street=[a.road||a.pedestrian||a.footway||a.neighbourhood,a.house_number].filter(Boolean).join(', ');
+        var city=a.city||a.town||a.village||'';
+        return street?(street+(city?', '+city:'')):(j.display_name||'').split(',').slice(0,3).join(',');
+      }).catch(function(){return null});
+    return Promise.race([f,t]);
+  }
+  function locate(btn,cb){
+    if(!navigator.geolocation){toast('Этот браузер не умеет определять место.');return}
+    var old=btn.textContent;btn.textContent='Ищу…';btn.disabled=true;
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var g={lat:pos.coords.latitude,lon:pos.coords.longitude,acc:pos.coords.accuracy};
+      reverse(g).then(function(addr){btn.textContent=old;btn.disabled=false;cb(g,addr)});
+    },function(){
+      btn.textContent=old;btn.disabled=false;
+      toast('Не удалось определить место. Разрешите доступ к геолокации для этого сайта и включите GPS.');
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+  }
+  $('geoBtn').addEventListener('click',function(){
+    locate($('geoBtn'),function(g,addr){
+      newGeo=g;
+      var pl=$('placeInput');
+      if(addr&&(!pl.value.trim()||pl.value===autoPlace)){pl.value=addr;autoPlace=addr}
+      $('geoInfo').innerHTML=geoHTML(g);$('geoInfo').hidden=false;
+      toast(addr?'Место определено':'Адрес не найден, координаты сохранены');
+    });
+  });
+
+  // ---------- repeat offenders ----------
+  function sameplate(plate,exceptId){
+    return records.filter(function(x){return !x.example&&x.plate===plate&&x.id!==exceptId})
+      .sort(function(a,b){return a.date<b.date?1:-1});
   }
 
-  // New check form
+  // ---------- photo slots ----------
+  function compress(file,slot){
+    return new Promise(function(res,rej){
+      var img=new Image(),url=URL.createObjectURL(file);
+      img.onload=function(){
+        var max=SIZE[slot][0],s=Math.min(1,max/Math.max(img.width,img.height));
+        var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+        var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+        URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',SIZE[slot][1]));
+      };
+      img.onerror=function(){URL.revokeObjectURL(url);rej()};
+      img.src=url;
+    });
+  }
+  function srcFor(r,slot){
+    var k=r.id+':'+slot;
+    if(imgCache[k])return imgCache[k];
+    if(slot==='car'&&typeof r.photo==='string'&&r.photo)return r.photo;
+    if(!r[slot])return null;
+    if(!pending[k]){
+      pending[k]=1;
+      imgGet(k).then(function(d){delete pending[k];if(d)imgCache[k]=d;else{r[slot]=false;save()}render()},
+                     function(){delete pending[k]});
+    }
+    return 'loading';
+  }
+  function pickHTML(where,scope,slot,src){
+    var id='f-'+where+'-'+scope+'-'+slot,conf=pickConfirm===scope+':'+slot;
+    var h='<div class="pick" data-scope="'+scope+'" data-slot="'+slot+'"><span class="ttl">'+SLOT[slot]+'</span><div class="frame'+(src?' has':'')+'">';
+    if(src==='loading')h+='<span>Загрузка…</span>';
+    else if(src)h+='<img src="'+src+'" alt="'+SLOT[slot]+'" data-pact="view">';
+    else h+='<span>'+EMPTY[slot]+'</span>';
+    h+='</div><input type="file" accept="image/*" class="vh" id="'+id+'" data-pick="1">';
+    if(conf)h+='<div class="acts"><button type="button" class="btn small danger" data-pact="rm-yes">Убрать</button><button type="button" class="btn small ghost" data-pact="rm-no">Отмена</button></div>';
+    else h+='<div class="acts"><label class="btn small" for="'+id+'">'+(src?'Заменить':'Добавить')+'</label>'+(src?'<button type="button" class="btn small ghost danger" data-pact="rm">Убрать</button>':'')+'</div>';
+    return h+'</div>';
+  }
+  function renderNewPics(){$('newPics').innerHTML=pickHTML('n','new','car',newImgs.car)+pickHTML('n','new','shot',newImgs.shot)}
+  function renderCurrent(){
+    var r=currentId&&byId(currentId);
+    if(!r){$('current').hidden=true;return}
+    $('curPlate').textContent=r.plate;
+    $('curPics').innerHTML=pickHTML('c',r.id,'car',srcFor(r,'car'))+pickHTML('c',r.id,'shot',srcFor(r,'shot'));
+  }
+  function setImg(scope,slot,d){
+    if(scope==='new'){newImgs[slot]=d;renderNewPics();return}
+    var r=byId(scope);if(!r)return;
+    var k=r.id+':'+slot;
+    imgPut(k,d).then(function(){imgCache[k]=d;r[slot]=true;if(slot==='car')delete r.photo;save();render();toast(SLOT[slot]+': сохранено')},
+                     function(){toast('Не удалось сохранить фото. Возможно, память телефона заполнена.')});
+  }
+  function removeImg(scope,slot){
+    if(scope==='new'){newImgs[slot]=null;renderNewPics();return}
+    var r=byId(scope);if(!r)return;
+    var k=r.id+':'+slot;
+    imgDel(k).then(function(){},function(){});
+    delete imgCache[k];r[slot]=false;if(slot==='car')delete r.photo;save();render();toast(SLOT[slot]+': убрано');
+  }
+  function rerender(scope){if(scope==='new')renderNewPics();else render()}
+  document.addEventListener('change',function(e){
+    var t=e.target;if(!t.dataset||!t.dataset.pick)return;
+    var pk=t.closest('.pick'),f=t.files&&t.files[0];if(!f)return;
+    var scope=pk.dataset.scope,slot=pk.dataset.slot;
+    compress(f,slot).then(function(d){setImg(scope,slot,d)},function(){toast('Это фото не открылось. Попробуйте другое.')});
+  });
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('[data-pact]');if(!t)return;
+    var pk=t.closest('.pick'),scope=pk.dataset.scope,slot=pk.dataset.slot,a=t.dataset.pact;
+    if(a==='view'){$('viewerImg').src=t.src;$('viewer').hidden=false;return}
+    if(a==='rm'){pickConfirm=scope+':'+slot;rerender(scope);return}
+    if(a==='rm-no'){pickConfirm=null;rerender(scope);return}
+    if(a==='rm-yes'){pickConfirm=null;removeImg(scope,slot)}
+  });
+  $('viewer').addEventListener('click',function(){$('viewer').hidden=true;$('viewerImg').removeAttribute('src')});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')$('viewer').hidden=true});
+
+  // ---------- new check form ----------
   function updatePreview(){
     var p=norm($('plateInput').value);
     var ok=RE.test(p);
     $('preview').innerHTML=p?plateHTML(p,'xl'):'<span class="ph">Здесь появится номер</span>';
-    $('goBtn').setAttribute('aria-disabled',ok?'false':'true');
     var h=$('plateHint');
-    if(p&&!ok&&p.length>=8){h.textContent='Формат номера: буква, 3 цифры, 2 буквы, регион (2–3 цифры). Буквы только А В Е К М Н О Р С Т У Х.';h.classList.add('err')}
+    if(p&&!ok&&p.length>=8){h.textContent='Номер необычного формата (мотоцикл, прицеп, спецтехника?). Проверьте символы. Госуслуги могут такой номер не принять, и тогда ошибка сайта не значит, что машины нет в реестре.';h.classList.add('err')}
     else{h.textContent='Можно латиницей: A123BC77 превратится в А123ВС77.';h.classList.remove('err')}
-    return ok?p:null;
+    var prev=p?sameplate(p):[],box=$('repeat');
+    if(prev.length){
+      box.innerHTML='<b>Этот номер уже попадался '+times(prev.length)+'</b><ul>'+prev.slice(0,3).map(function(x){
+        return '<li>'+fmtDate(x.date)+(x.place?', '+esc(x.place):'')+' — '+STATUS[x.status]+'</li>'}).join('')+'</ul>';
+      box.hidden=false;
+    }else box.hidden=true;
+    return p||null;
   }
   $('plateInput').addEventListener('input',updatePreview);
-  $('photoInput').addEventListener('change',function(e){
-    var f=e.target.files&&e.target.files[0];if(!f)return;
-    var img=new Image(),url=URL.createObjectURL(f);
-    img.onload=function(){
-      var max=720,s=Math.min(1,max/Math.max(img.width,img.height));
-      var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      photoData=c.toDataURL('image/jpeg',0.62);URL.revokeObjectURL(url);
-      $('photoThumb').src=photoData;$('photoThumb').hidden=false;
-    };
-    img.onerror=function(){toast('Это фото не открылось. Попробуйте другое.')};
-    img.src=url;
-  });
+  function setSeg(box,val){Array.prototype.forEach.call(box.querySelectorAll('button'),function(b){b.setAttribute('aria-pressed',b.dataset.b===val?'true':'false')})}
+  $('newBadge').addEventListener('click',function(e){var b=e.target.closest('button[data-b]');if(!b)return;newBadge=b.dataset.b;setSeg($('newBadge'),newBadge)});
   $('goBtn').addEventListener('click',function(e){
     var p=updatePreview();
-    if(!p){e.preventDefault();return}
+    if(!p){e.preventDefault();toast('Сначала введите номер');return}
     copy(p,'Номер '+p+' скопирован. Вставьте его на сайте.');
-    var r={id:'r'+Date.now(),plate:p,place:$('placeInput').value.trim(),note:$('noteInput').value.trim(),status:'new',date:new Date().toISOString(),photo:photoData||null};
+    var r={id:'r'+Date.now(),plate:p,place:$('placeInput').value.trim(),note:$('noteInput').value.trim(),status:'new',badge:newBadge,date:fromLocalInput($('dateInput').value)||new Date().toISOString(),car:false,shot:false,geo:newGeo,pub:false};
+    ['car','shot'].forEach(function(slot){
+      var d=newImgs[slot];if(!d)return;
+      var k=r.id+':'+slot;imgCache[k]=d;r[slot]=true;
+      imgPut(k,d).catch(function(){toast('Не удалось сохранить фото. Возможно, память телефона заполнена.')});
+    });
     records=records.filter(function(x){return !x.example});
     records.unshift(r);save();
-    currentId=r.id;$('curPlate').textContent=p;$('current').hidden=false;
-    $('plateInput').value='';$('placeInput').value='';$('noteInput').value='';$('photoInput').value='';photoData=null;$('photoThumb').hidden=true;
-    updatePreview();render();
+    currentId=r.id;$('current').hidden=false;
+    $('plateInput').value='';$('placeInput').value='';$('noteInput').value='';$('dateInput').value='';newGeo=null;autoPlace=null;$('geoInfo').hidden=true;
+    newImgs={car:null,shot:null};newBadge='unknown';setSeg($('newBadge'),'unknown');
+    renderNewPics();updatePreview();render();
   });
-  function mark(id,st){
-    var r=records.find(function(x){return x.id===id});if(!r)return;
-    r.status=st;save();render();
-  }
-  $('markBad').addEventListener('click',function(){mark(currentId,'violator');$('current').hidden=true;openId=currentId;render();toast('Отмечено: нет в реестре')});
-  $('markOk').addEventListener('click',function(){mark(currentId,'ok');$('current').hidden=true;toast('Отмечено: есть в реестре')});
+  $('copyOnly').addEventListener('click',function(){
+    var p=updatePreview();
+    if(!p){toast('Сначала введите номер');return}
+    copy(p,'Номер '+p+' скопирован');
+  });
+  function mark(id,st){var r=byId(id);if(!r)return;r.status=st;save();render()}
+  $('markBad').addEventListener('click',function(){mark(currentId,'violator');toast('Отмечено: нет в реестре. Можно прикрепить скриншот.')});
+  $('markOk').addEventListener('click',function(){mark(currentId,'ok');toast('Отмечено: есть в реестре')});
+  $('curDone').addEventListener('click',function(){$('current').hidden=true;openId=currentId;currentId=null;pickConfirm=null;render()});
 
-  // Filters
+  // ---------- filters ----------
   Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){
     b.addEventListener('click',function(){
       filter=b.dataset.f;
@@ -283,48 +495,95 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;ga
     });
   });
 
-  // List
+  // ---------- list ----------
   function render(){
     var list=$('list');
-    var rows=records.filter(function(r){return filter==='all'||r.status===filter});
-    if(!rows.length){list.innerHTML='<div class="empty">'+(records.length?'В этом фильтре пусто.':'Пока ни одной проверки. Введите номер выше.')+'</div>';return}
-    list.innerHTML=rows.map(function(r){
-      var open=r.id===openId;
+    var counts={};records.forEach(function(r){if(!r.example)counts[r.plate]=(counts[r.plate]||0)+1});
+    var rows=records.filter(function(r){
+      if(filter==='all')return true;
+      if(filter==='repeat')return counts[r.plate]>1;
+      if(filter==='unpub')return !r.pub&&!r.example;
+      return r.status===filter;
+    }).filter(function(r){
+      if(!query.trim())return true;
+      var nq=norm(query),lq=query.trim().toLowerCase();
+      return (nq&&r.plate.indexOf(nq)>=0)||(r.place||'').toLowerCase().indexOf(lq)>=0||(r.note||'').toLowerCase().indexOf(lq)>=0;
+    }).sort(function(a,b){return a.date<b.date?1:-1});
+    if(!rows.length){list.innerHTML='<div class="empty">'+(query.trim()?'Ничего не найдено.':records.length?'В этом фильтре пусто.':'Пока ни одной проверки. Введите номер выше.')+'</div>'}
+    else list.innerHTML=rows.map(function(r){
+      var open=r.id===openId,n=counts[r.plate]||0;
       var h='<div class="item" data-id="'+r.id+'"><button class="head" data-act="toggle" aria-expanded="'+open+'">'+plateHTML(r.plate,'s')+
-        '<span class="meta"><span class="place">'+esc(r.place||'Место не указано')+(r.example?'<span class="tag">пример</span>':'')+'</span><span class="date">'+fmtDate(r.date)+'</span></span>'+
+        '<span class="meta"><span class="place">'+esc(r.place||'Место не указано')+(r.example?'<span class="tag">пример</span>':'')+'</span>'+
+        '<span class="date">'+fmtDate(r.date)+' · '+BADGE[r.badge||'unknown']+'</span>'+
+        ((n>1||r.pub)?'<span class="flags">'+(n>1?'<span class="rep">Попадался '+times(n)+'</span>':'')+(r.pub?'<span class="pubt">В блоге</span>':'')+'</span>':'')+'</span>'+
         '<span class="pill '+r.status+'">'+STATUS[r.status]+'</span></button>';
       if(open){
         h+='<div class="body">';
-        if(r.photo)h+='<img class="photo" src="'+r.photo+'" alt="Фото машины '+esc(r.plate)+'">';
-        if(r.note)h+='<p class="note">'+esc(r.note)+'</p>';
+        h+='<div class="pics">'+pickHTML('l',r.id,'car',srcFor(r,'car'))+pickHTML('l',r.id,'shot',srcFor(r,'shot'))+'</div>';
+        h+='<div class="edit">'+
+          '<div class="field"><label for="pl-'+r.id+'">Место</label><div class="inline"><input type="text" id="pl-'+r.id+'" data-f="place" value="'+esc(r.place||'')+'" placeholder="Где стояла машина"><button type="button" class="btn small" data-act="geo">Где я</button></div>'+
+          (r.geo?'<p class="geo">'+geoHTML(r.geo)+'</p>':'')+'</div>'+
+          '<label for="nt-'+r.id+'">Заметка<textarea id="nt-'+r.id+'" data-f="note" placeholder="Что важно запомнить">'+esc(r.note||'')+'</textarea></label>'+
+          '<label for="dt-'+r.id+'">Дата и время<input type="datetime-local" id="dt-'+r.id+'" data-f="date" value="'+toLocalInput(r.date)+'"></label>'+
+          '</div>';
+        var others=sameplate(r.plate,r.id);
+        if(others.length)h+='<ul class="others">'+others.slice(0,5).map(function(x){return '<li>'+fmtDate(x.date)+(x.place?', '+esc(x.place):'')+' — '+STATUS[x.status]+'</li>'}).join('')+'</ul>';
         h+='<a class="btn primary" data-act="recheck" href="https://www.gosuslugi.ru/invalidam/check-transport" target="_blank" rel="noopener">Скопировать номер и открыть Госуслуги</a>';
+        var bd=r.badge||'unknown';
+        h+='<div class="seg"><span class="sl">Знак «Инвалид»:</span>'+['yes','no','unknown'].map(function(k){return '<button type="button" data-b="'+k+'" data-act="badge" aria-pressed="'+(bd===k)+'">'+{yes:'Да',no:'Нет',unknown:'Не смотрел'}[k]+'</button>'}).join('')+'</div>';
         h+='<div class="row"><button class="btn small bad" data-act="violator">Нет в реестре</button><button class="btn small good" data-act="ok">Есть в реестре</button></div>';
-        if(confirmId===r.id)h+='<div class="confirm">Удалить запись? <button class="btn small danger" data-act="del-yes">Удалить</button><button class="btn small ghost" data-act="del-no">Отмена</button></div>';
+        h+='<div class="row"><button type="button" class="btn small" data-act="pub" aria-pressed="'+(!!r.pub)+'">'+(r.pub?'Опубликовано в блоге':'Отметить: опубликовано')+'</button></div>';
+        if(confirmId===r.id)h+='<div class="confirm">Удалить запись вместе с фото? <button class="btn small danger" data-act="del-yes">Удалить</button><button class="btn small ghost" data-act="del-no">Отмена</button></div>';
         else h+='<div class="row"><button class="btn small ghost danger" data-act="del">Удалить запись</button></div>';
         h+='</div>';
       }
       return h+'</div>';
     }).join('');
+    if(!$('current').hidden)renderCurrent();
   }
   $('list').addEventListener('click',function(e){
     var t=e.target.closest('[data-act]');if(!t)return;
-    var item=t.closest('.item'),id=item&&item.dataset.id,r=records.find(function(x){return x.id===id});if(!r)return;
+    var item=t.closest('.item'),id=item&&item.dataset.id,r=byId(id);if(!r)return;
     var a=t.dataset.act;
-    if(a==='toggle'){openId=openId===id?null:id;confirmId=null;render();return}
-    if(a==='recheck'){copy(r.plate,'Номер '+r.plate+' скопирован. Вставьте его на сайте.');currentId=id;$('curPlate').textContent=r.plate;$('current').hidden=false;return}
+    if(a==='toggle'){openId=openId===id?null:id;confirmId=null;pickConfirm=null;render();return}
+    if(a==='recheck'){copy(r.plate,'Номер '+r.plate+' скопирован. Вставьте его на сайте.');currentId=id;$('current').hidden=false;renderCurrent();return}
+    if(a==='badge'){r.badge=t.dataset.b;save();render();return}
+    if(a==='pub'){r.pub=!r.pub;save();render();toast(r.pub?'Отмечено: опубликовано':'Отметка снята');return}
+    if(a==='geo'){locate(t,function(g,addr){r.geo=g;if(addr&&!(r.place||'').trim())r.place=addr;save();render();toast(addr?'Место определено':'Адрес не найден, координаты сохранены')});return}
     if(a==='violator'||a==='ok'){mark(id,a);return}
     if(a==='del'){confirmId=id;render();return}
     if(a==='del-no'){confirmId=null;render();return}
-    if(a==='del-yes'){records=records.filter(function(x){return x.id!==id});confirmId=null;openId=null;save();render();toast('Запись удалена')}
+    if(a==='del-yes'){
+      ['car','shot'].forEach(function(s){imgDel(id+':'+s).catch(function(){});delete imgCache[id+':'+s]});
+      records=records.filter(function(x){return x.id!==id});confirmId=null;openId=null;
+      if(currentId===id){currentId=null;$('current').hidden=true}
+      save();render();toast('Запись удалена');
+    }
+  });
+  $('list').addEventListener('change',function(e){
+    var t=e.target,item=t.closest&&t.closest('.item');if(!item||!t.dataset)return;
+    var r=byId(item.dataset.id);if(!r)return;
+    var f=t.dataset.f;if(!f)return;
+    if(f==='date'){var d=fromLocalInput(t.value);if(d){r.date=d;save();render();toast('Дата изменена')}return}
+    r[f]=t.value.trim();save();
+    if(f==='place'){var pl=item.querySelector('.head .place');if(pl&&pl.firstChild)pl.firstChild.nodeValue=r.place||'Место не указано'}
+    toast('Сохранено');
   });
   $('exportBtn').addEventListener('click',function(){
     var real=records.filter(function(r){return !r.example});
     if(!real.length){toast('Список пока пуст');return}
-    var txt=real.map(function(r){return pretty(r.plate)+' | '+fmtDate(r.date)+' | '+(r.place||'—')+' | '+STATUS[r.status]+(r.note?' | '+r.note:'')}).join('\n');
+    var txt=real.map(function(r){return pretty(r.plate)+' | '+fmtDate(r.date)+' | '+(r.place||'—')+' | '+STATUS[r.status]+' | '+BADGE[r.badge||'unknown']+(r.pub?' | в блоге':'')+(r.geo?' | '+r.geo.lat.toFixed(5)+','+r.geo.lon.toFixed(5):'')+(r.note?' | '+r.note:'')}).join('\n');
     copy(txt,'Список скопирован ('+real.length+')');
   });
 
-  load();render();
+  $('search').addEventListener('input',function(){query=this.value;render()});
+
+  load();renderNewPics();render();
+  // Офлайн-режим отключён: убираем ранее установленный service worker и его кэш
+  try{
+    if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){});
+    if(window.caches)caches.keys().then(function(ks){ks.forEach(function(k){if(k.indexOf('proverka-')===0)caches.delete(k)})}).catch(function(){});
+  }catch(e){}
 })();
 </script>
 
