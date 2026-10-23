@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f5bc4">
+<meta name="description" content="Проверка машин в федеральном реестре инвалидов (ФГИС ФРИ) и учёт нарушений на местах для инвалидов">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Проверка авто">
@@ -453,7 +454,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   var SLOT={car:'Фото машины',shot:'Скриншот проверки'};
   var TILE={car:'Фото машины',shot:'Скриншот'};
   var SIZE={car:[1000,0.65],shot:[1500,0.72]};
-  var GOS='https://www.gosuslugi.ru/invalidam/check-transport',PAGE_VER='2026-10-23k';
+  var GOS='https://www.gosuslugi.ru/invalidam/check-transport',PAGE_VER='2026-10-23l';
   var $=function(id){return document.getElementById(id)};
   var records=[],filter='all',openId=null,openV=null,editId=null,confirmId=null,query='';
   var imgCache={},pending={},newGeo=null,autoPlace=null,tab='check',histDirty=true,lastVisits=[];
@@ -1497,7 +1498,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     }
     if($('rpDiag').checked){
       var v='';try{if(NATIVE&&AndroidApp.version)v=AndroidApp.version()}catch(e){}
-      L.push('','Диагностика:','Версия страницы: '+PAGE_VER,'Приложение: '+(NATIVE?(v||'старше 1.7'):'открыто в браузере'),
+      L.push('','Диагностика:','Версия страницы: '+PAGE_VER,'Приложение: '+(NATIVE?(v||'до 1.7'):'открыто в браузере'),
         'Устройство: '+navigator.userAgent,'Экран: '+screen.width+'x'+screen.height+', окно '+innerWidth+'x'+innerHeight,
         'Интернет: '+(navigator.onLine?'есть':'нет')+', язык '+navigator.language+', тема '+(document.documentElement.getAttribute('data-theme')||'авто'),
         'Номер по фото: '+(OCR_OK?'есть':'нет')+', голос: '+(VOICE_OK?'есть':'нет')+', Google Диск: '+(GD_OK?(gd?'подключён':'не подключён'):'нет'),
@@ -1521,7 +1522,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     var L=['Проверка авто: '+(bug?'ошибка в приложении':'сообщение автору'),'Дата: '+new Date().toLocaleString('ru-RU')];
     if(fbReply==='no')L.push('Ответ не нужен (сообщение без контактов)');
     else{if(who)L.push('От: '+who);L.push('Как ответить: '+(how||'здесь, в личном сообщении'))}
-    L.push('Версия: страница '+PAGE_VER+(NATIVE?', приложение '+(v||'старше 1.7'):', браузер'),'',($('fbText').value||'').trim());
+    L.push('Версия: страница '+PAGE_VER+(NATIVE?', приложение '+(v||'до 1.7'):', браузер'),'',($('fbText').value||'').trim());
     if(bug){L.push('');L=L.concat(reportExtra().split('\n'))}
     return L.join('\n');
   }
@@ -2808,7 +2809,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   window.__theme=applyTheme;applyTheme();
   (function(){
     var v='';try{if(NATIVE&&AndroidApp.version)v=AndroidApp.version()}catch(e){}
-    $('aboutApp').textContent='Версия страницы: '+PAGE_VER+(NATIVE?' · приложение: '+(v||'старше 1.7'):' · в браузере')+' · номер по фото: '+(OCR_OK?'есть':'нет')+' · голос: '+(VOICE_OK?'есть':'нет')+' · Google Диск: '+(GD_OK?'есть':'нет');
+    $('aboutApp').textContent='Версия страницы: '+PAGE_VER+(NATIVE?' · приложение: '+(v||'до 1.7'):' · в браузере')+' · номер по фото: '+(OCR_OK?'есть':'нет')+' · голос: '+(VOICE_OK?'есть':'нет')+' · Google Диск: '+(GD_OK?'есть':'нет');
   })();
   if(NATIVE)$('storeNote').textContent='Записи хранятся только в этом приложении на этом телефоне. Если удалить приложение или потерять телефон, они пропадут, поэтому иногда сохраняйте копию.';
   load();assignVids();renderTpls();blocks=[newBlock()];curK=blocks[0].k;renderBlocks();render();tryPersist();
@@ -2820,6 +2821,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
 
 
 
