@@ -148,7 +148,7 @@ details.how ol{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:col
 .acs{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ach{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 12px 5px;background:var(--bg)}
 .acwait{padding:10px 12px;white-space:normal}
-#themeSeg button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+#themeSeg button[aria-pressed=true],#fbReply button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .btn.mic{font-size:20px;padding:6px 12px;min-width:50px}
 .ctab.plus{border-style:dashed;color:var(--accent);background:transparent}
 /* history */
@@ -218,6 +218,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
 .vb,.vx{font:inherit;font-weight:600;font-size:15px;background:#fff;color:#111;border:0;border-radius:12px;padding:12px 14px;cursor:pointer;flex:1 1 0;text-align:center;min-height:46px;display:inline-flex;align-items:center;justify-content:center}
 .vx{flex:0 0 auto;padding:9px 14px;min-height:0}
 .vb.del{background:#c0352b;color:#fff}
+.cinfo{display:block;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font:inherit;color:var(--fg);cursor:pointer;margin:10px 0}.cinfo div{display:flex;gap:10px;font-size:14px;margin:3px 0;line-height:1.35}.cinfo b{flex:0 0 64px;font-weight:600;color:var(--muted)}.cinfo span{min-width:0;overflow-wrap:anywhere}.cinfo .e{margin-top:5px;font-size:12.5px;color:var(--accent)}
 .dlg{position:fixed;inset:0;z-index:30;background:#0009;display:flex;align-items:flex-end;justify-content:center}.dbox{background:var(--surface);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow:auto}.dbox h3{margin:0 0 10px;font-size:17px}.dbox .row{margin-top:12px}
 .mapx{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column}
 .mapbar{padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
@@ -360,21 +361,37 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       <label class="chk"><input type="checkbox" id="stampChk" checked> Накладывать на фото машины дату, время и место</label>
       <div class="seg" id="themeSeg" role="group" aria-label="Тема"><span class="sl">Тема:</span><button type="button" data-th="auto" aria-pressed="true">Как в системе</button><button type="button" data-th="light" aria-pressed="false">Светлая</button><button type="button" data-th="dark" aria-pressed="false">Тёмная</button></div>
     </div>
-    <div class="card" id="reportCard">
-      <h2>Сообщить об ошибке</h2>
-      <p class="hint">Опишите, что не так. Сообщение получит автор приложения. Данные других машин не отправляются, только то, что вы выберете ниже.</p>
-      <label for="rpText">Что случилось
-        <textarea id="rpText" placeholder="Например: номер с фото прочитался неверно"></textarea>
+    <div class="card" id="feedbackCard">
+      <h2>Написать автору</h2>
+      <p class="hint">Пожелание, замечание, вопрос или сообщение об ошибке: пишите всё в одном окне. Автор читает сообщения и отвечает вам в том канале, который вы выберете ниже.</p>
+      <label for="fbText">Ваше сообщение
+        <textarea id="fbText" placeholder="Например: хочется, чтобы список можно было сортировать по месту"></textarea>
       </label>
-      <label for="rpCar">Приложить карточку машины
-        <select id="rpCar"><option value="">Не прикладывать</option></select>
-      </label>
-      <label class="chk"><input type="checkbox" id="rpDiag" checked> Добавить диагностику (версия, телефон, последние сообщения и ошибки)</label>
-      <div class="row">
-        <button type="button" class="btn primary" id="rpSend">Отправить автору</button>
-        <button type="button" class="btn" id="rpCopy">Скопировать текст</button>
+      <label class="chk"><input type="checkbox" id="rpDiag"> Это ошибка в приложении: приложить диагностику</label>
+      <div id="rpMore" hidden>
+        <label for="rpCar">Приложить карточку машины
+          <select id="rpCar"><option value="">Не прикладывать</option></select>
+        </label>
+        <p class="hint">Диагностика: версия, телефон, последние сообщения и ошибки приложения. Данные других машин не отправляются.</p>
       </div>
-      <p class="hint">Откроется список приложений: выберите Telegram, почту или другой мессенджер. Почта автора: sherbinin0098@gmail.com</p>
+      <div class="seg" id="fbReply" role="group" aria-label="Нужен ли ответ"><span class="sl">Ответ автора:</span><button type="button" data-r="yes" aria-pressed="true">Нужен</button><button type="button" data-r="no" aria-pressed="false">Не нужен</button></div>
+      <div id="fbContactWrap">
+        <label for="fbContact">Как вам ответить <span class="opt">(необязательно)</span>
+          <input type="text" id="fbContact" placeholder="@ник в Telegram, почта или телефон" autocomplete="off" autocapitalize="off">
+        </label>
+        <p class="hint" id="fbCheck" hidden></p>
+        <button type="button" class="btn small ghost" id="fbOpenTg">Проверить аккаунт в Telegram</button>
+      </div>
+      <p class="hint" id="fbAnon" hidden>Ваше имя и контакт в текст не попадут, ответа не будет. Но при отправке через Telegram или почту автор всё равно увидит ваш аккаунт, потому что сообщение приходит с него.</p>
+      <div class="row">
+        <button type="button" class="btn primary" id="fbSend">Отправить</button>
+        <button type="button" class="btn" id="fbMail">На почту</button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="fbTg" hidden>В Telegram</button>
+        <button type="button" class="btn" id="fbCopy">Скопировать текст</button>
+      </div>
+      <p class="hint">«Отправить» открывает список приложений: выберите мессенджер или почту. Почта автора: sherbinin0098@gmail.com.</p>
     </div>
     <details class="how" id="how">
       <summary>Как получить скриншот проверки</summary>
@@ -436,7 +453,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   var SLOT={car:'Фото машины',shot:'Скриншот проверки'};
   var TILE={car:'Фото машины',shot:'Скриншот'};
   var SIZE={car:[1000,0.65],shot:[1500,0.72]};
-  var GOS='https://www.gosuslugi.ru/invalidam/check-transport',PAGE_VER='2026-10-23g';
+  var GOS='https://www.gosuslugi.ru/invalidam/check-transport',PAGE_VER='2026-10-23k';
   var $=function(id){return document.getElementById(id)};
   var records=[],filter='all',openId=null,openV=null,editId=null,confirmId=null,query='';
   var imgCache={},pending={},newGeo=null,autoPlace=null,tab='check',histDirty=true,lastVisits=[];
@@ -1414,8 +1431,8 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
 
   // ---------- result of the check from a screenshot of the Gosuslugi page ----------
-  var NEG_RE=/(не\s*(найден|обнаружен|включен|состоит|зарегистрирован|внесен|числится|значится)|отсутству|нет\s+(в\s+реестр|данных|сведений|информации)|не\s+нашл)/;
-  var POS_RE=/(найден|включен|состоит\s+в\s+реестре|внесен|имеется|значится|зарегистрирован|есть\s+в\s+реестре|размещен)/;
+  var NEG_RE=/(не\s*(найден|обнаружен|включен|состоит|зарегистрирован|внесен|числится|значится)|отсутству|нет\s+(в\s+реестр|данных|сведений|информации)|не\s+нашл|нельзя\s+паркова)/;
+  var POS_RE=/(найден|включен|состоит\s+в\s+реестре|внесен|имеется|значится|зарегистрирован|есть\s+в\s+реестре|размещен|можно\s+паркова)/;
   var ERR_RE=/(ошибк|недоступн|не\s+удалось|повторите\s+попытк|технически|сервис\s+временно)/;
   // verdict: {st:'violator'|'ok'|'error'|'unclear', line:'the line that decided'}
   function shotVerdict(lines){
@@ -1467,11 +1484,11 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     sel.innerHTML='<option value="">Не прикладывать</option>'+list.map(function(r){return '<option value="'+r.id+'">'+esc((r.plate?pretty(r.plate):'без номера')+' · '+fmtDate(r.date))+'</option>'}).join('');
     if(keep&&byId(keep))sel.value=keep;
   }
-  function reportText(){
-    var L=['Проверка авто: сообщение об ошибке','Дата: '+new Date().toLocaleString('ru-RU'),'','Что случилось:',($('rpText').value||'').trim()||'(не описано)'];
+  function reportExtra(){
+    var L=[];
     var rid=$('rpCar').value,r=rid&&byId(rid);
     if(r){
-      L.push('','Карточка машины:','Номер: '+(r.plate?pretty(r.plate):'не указан'),'Дата: '+fmtDate(r.date),'Место: '+(r.place||'не указано'),
+      L.push('Карточка машины:','Номер: '+(r.plate?pretty(r.plate):'не указан'),'Дата: '+fmtDate(r.date),'Место: '+(r.place||'не указано'),
         'Результат: '+STATUS[r.status]+(r.via==='shot'?' (выбран автоматически по скриншоту)':''),'Знак «Инвалид»: '+BADGE[r.badge||'unknown'],
         'Фото машины: '+(r.car?'есть':'нет')+', скриншот: '+(r.shot?'есть':'нет'));
       if(r.geo)L.push('Координаты: '+r.geo.lat.toFixed(5)+', '+r.geo.lon.toFixed(5));
@@ -1493,18 +1510,116 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     }
     return L.join('\n');
   }
-  if($('rpSend')){
-    $('rpText').addEventListener('focus',fillReportCars);
-    fillReportCars();
-    $('rpCopy').addEventListener('click',function(){copy(reportText(),'Текст скопирован. Вставьте его в письмо или сообщение автору.')});
-    $('rpSend').addEventListener('click',function(){
-      var txt=reportText(),name='proverka-oshibka-'+dayStamp()+'.txt';
-      if(!($('rpText').value||'').trim()){toast('Опишите в двух словах, что не так.');$('rpText').focus();return}
-      var blob=new Blob([txt],{type:'text/plain'});
-      if(NATIVE){nativeFile(blob,name,'share').then(function(ok){if(!ok)copy(txt,'Не удалось открыть отправку. Текст скопирован, вставьте его автору: '+AUTHOR_MAIL)});return}
-      if(navigator.share){navigator.share({title:'Проверка авто: ошибка',text:txt}).catch(function(e){if(!e||e.name!=='AbortError')copy(txt,'Текст скопирован. Отправьте его автору: '+AUTHOR_MAIL)});return}
-      location.href='mailto:'+AUTHOR_MAIL+'?subject='+encodeURIComponent('Проверка авто: ошибка')+'&body='+encodeURIComponent(txt.slice(0,1800));
+  if($('rpCar')){$('rpDiag').addEventListener('change',function(){$('rpMore').hidden=!this.checked;if(this.checked)fillReportCars()});fillReportCars()}
+
+  // ---------- wishes and remarks: a conversation with the author, by several channels ----------
+  var TG_USER='xjdsdxjdsd';  // the author's Telegram name without @; when empty the Telegram button stays hidden
+  var FB_KEY='fgis-fri-contact',FB_RKEY='fgis-fri-fbreply',fbReply='yes';
+  function fbText(){
+    var v='';try{if(NATIVE&&AndroidApp.version)v=AndroidApp.version()}catch(e){}
+    var who=(($('authorInput')||{}).value||'').trim(),how=($('fbContact').value||'').trim(),bug=$('rpDiag').checked;
+    var L=['Проверка авто: '+(bug?'ошибка в приложении':'сообщение автору'),'Дата: '+new Date().toLocaleString('ru-RU')];
+    if(fbReply==='no')L.push('Ответ не нужен (сообщение без контактов)');
+    else{if(who)L.push('От: '+who);L.push('Как ответить: '+(how||'здесь, в личном сообщении'))}
+    L.push('Версия: страница '+PAGE_VER+(NATIVE?', приложение '+(v||'старше 1.7'):', браузер'),'',($('fbText').value||'').trim());
+    if(bug){L.push('');L=L.concat(reportExtra().split('\n'))}
+    return L.join('\n');
+  }
+  function fbSubject(){return 'Проверка авто: '+($('rpDiag').checked?'ошибка':'сообщение')}
+  // what kind of contact is this: {kind:'email'|'tg'|'phone'|'bad'|'', msg}
+  function parseContact(v){
+    v=String(v||'').trim();
+    if(!v)return {kind:''};
+    var m;
+    if(v.indexOf('@')>0){
+      if(/^[^\s@]+@[A-Za-z0-9\u0400-\u04FF](?:[A-Za-z0-9\u0400-\u04FF.-]*[A-Za-z0-9\u0400-\u04FF])?\.[A-Za-z\u0400-\u04FF]{2,}$/.test(v))return {kind:'email',val:v,domain:v.split('@')[1]};
+      return {kind:'bad',msg:'Адрес почты написан с ошибкой. Пример: name@mail.ru'};
+    }
+    m=/^(?:https?:\/\/)?(?:t\.me\/|telegram\.me\/)?@?([A-Za-z][A-Za-z0-9_]*)\/?$/.exec(v);
+    if(m&&(v.charAt(0)==='@'||/t\.me|telegram\.me/.test(v)||/^[A-Za-z][A-Za-z0-9_]*$/.test(v))){
+      if(m[1].length<5||m[1].length>32)return {kind:'bad',msg:'Ник в Telegram: от 5 до 32 символов (латинские буквы, цифры и _), начинается с буквы.'};
+      return {kind:'tg',val:'@'+m[1],nick:m[1]};
+    }
+    if(/^\+?[\d\s\-()]{10,20}$/.test(v)){
+      var d=v.replace(/\D/g,'');
+      if(d.length>=10&&d.length<=15)return {kind:'phone',val:v};
+      return {kind:'bad',msg:'Номер телефона должен содержать от 10 до 15 цифр.'};
+    }
+    return {kind:'bad',msg:'Это не похоже на Telegram (@ник), почту или телефон. Проверьте, как вы написали.'};
+  }
+  // does the mail domain exist and take mail? (DNS over HTTPS, no server of ours); resolves 'yes' | 'no' | 'unknown'
+  function mailDomainOk(domain){
+    function q(type){
+      var ctl=window.AbortController?new AbortController():null,t=ctl&&setTimeout(function(){ctl.abort()},5000);
+      return fetch('https://cloudflare-dns.com/dns-query?name='+encodeURIComponent(domain)+'&type='+type,{headers:{accept:'application/dns-json'},signal:ctl?ctl.signal:undefined})
+        .then(function(r){if(t)clearTimeout(t);return r.json()});
+    }
+    return q('MX').then(function(j){
+      if(j.Answer&&j.Answer.length)return 'yes';
+      if(j.Status===3)return 'no';
+      return q('A').then(function(a){return a.Answer&&a.Answer.length?'yes':'no'});
+    }).catch(function(){return 'unknown'});
+  }
+  var fbSeq=0;
+  // shows what we found out about the contact; resolves true when it is fine to send
+  function fbCheck(){
+    var el=$('fbCheck'),c=parseContact($('fbContact').value),my=++fbSeq;
+    function say(t,cls){el.textContent=t;el.className='hint'+(cls?' '+cls:'');el.hidden=!t}
+    if(fbReply==='no'||!c.kind){say('');return Promise.resolve(true)}
+    if(c.kind==='bad'){say(c.msg,'err');return Promise.resolve(false)}
+    if(c.kind==='phone'){say('Телефон записан. Проверить, что он существует, из приложения нельзя.');return Promise.resolve(true)}
+    if(c.kind==='tg'){say('Telegram '+c.val+': ник написан верно. Есть ли такой аккаунт, приложение проверить не может. Нажмите «Проверить аккаунт», откроется его страница.');return Promise.resolve(true)}
+    say('Проверяю почтовый домен '+c.domain+'…');
+    return mailDomainOk(c.domain).then(function(r){
+      if(my!==fbSeq)return true;
+      if(r==='no'){say('Домена '+c.domain+' не существует. Проверьте адрес: '+c.val,'err');return false}
+      if(r==='yes'){say('Домен '+c.domain+' принимает почту. Сам ящик проверить нельзя, поэтому перечитайте адрес.');return true}
+      say('Не удалось проверить домен (нет связи). Перечитайте адрес.');return true;
     });
+  }
+  function fbOk(){
+    if(!($('fbText').value||'').trim()){toast('Напишите сообщение.');$('fbText').focus();return Promise.resolve(false)}
+    return fbCheck().then(function(ok){
+      if(!ok){toast('Исправьте контакт для ответа или выберите «Ответ не нужен».',5000);$('fbContact').focus();return false}
+      try{localStorage.setItem(FB_KEY,fbReply==='no'?'':($('fbContact').value||'').trim());localStorage.setItem(FB_RKEY,fbReply)}catch(e){}
+      return true;
+    });
+  }
+  function fbSetReply(r){
+    fbReply=r;
+    Array.prototype.forEach.call(document.querySelectorAll('#fbReply button'),function(x){x.setAttribute('aria-pressed',x.dataset.r===r?'true':'false')});
+    $('fbContactWrap').hidden=r==='no';
+    $('fbAnon').hidden=r!=='no';
+    fbCheck();
+  }
+  if($('fbSend')){
+    try{$('fbContact').value=localStorage.getItem(FB_KEY)||''}catch(e){}
+    if(TG_USER)$('fbTg').hidden=false;
+    $('fbSend').addEventListener('click',function(){
+      fbOk().then(function(ok){if(!ok)return;
+      var txt=fbText(),name='proverka-soobshenie-'+dayStamp()+'.txt',blob=new Blob([txt],{type:'text/plain'});
+      if(NATIVE){nativeFile(blob,name,'share').then(function(ok){if(!ok)copy(txt,'Не удалось открыть отправку. Текст скопирован, вставьте его автору.')});return}
+      if(navigator.share){navigator.share({title:fbSubject(),text:txt}).catch(function(e){if(!e||e.name!=='AbortError')copy(txt,'Текст скопирован. Отправьте его автору.')});return}
+      copy(txt,'Текст скопирован. Отправьте его автору.');
+      });
+    });
+    $('fbMail').addEventListener('click',function(){
+      fbOk().then(function(ok){if(!ok)return;
+        location.href='mailto:'+AUTHOR_MAIL+'?subject='+encodeURIComponent(fbSubject())+'&body='+encodeURIComponent(fbText().slice(0,1800));
+      });
+    });
+    $('fbTg').addEventListener('click',function(){
+      fbOk().then(function(ok){if(!ok)return;
+        var txt=fbText();copy(txt,'Текст скопирован. Откроется чат с автором: вставьте текст и отправьте.');
+        setTimeout(function(){location.href='https://t.me/'+TG_USER+'?text='+encodeURIComponent(txt.slice(0,1500))},900);
+      });
+    });
+    $('fbCopy').addEventListener('click',function(){fbOk().then(function(ok){if(ok)copy(fbText(),'Текст скопирован. Отправьте его автору: '+AUTHOR_MAIL)})});
+    Array.prototype.forEach.call(document.querySelectorAll('#fbReply button'),function(b){b.addEventListener('click',function(){fbSetReply(b.dataset.r)})});
+    $('fbContact').addEventListener('change',fbCheck);
+    $('fbContact').addEventListener('blur',fbCheck);
+    $('fbOpenTg').addEventListener('click',function(){var c=parseContact($('fbContact').value);if(c.kind==='tg')location.href='https://t.me/'+c.nick;else toast('Введите ник в Telegram, например @ivan')});
+    try{if(localStorage.getItem(FB_RKEY)==='no')fbSetReply('no')}catch(e){}
   }
 
   // ---------- voice: say the plate ----------
@@ -1944,7 +2059,15 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       '<span class="csub"><span>'+BADGE[r.badge||'unknown']+'</span>'+(n>1?'<span class="rep">Попадался '+times(n)+'</span>':'')+(r.pub?'<span class="pubt">В блоге</span>':'')+'</span></span>'+
       '<span class="pill '+r.status+'">'+STATUS[r.status]+'</span></button>';
     if(!open)return h+'</div>';
-    h+='<div class="cbody">'+tilesHTML(r.id)+
+    var infoH='';
+    if(!(editId===r.id||!r.plate)){
+      infoH='<button type="button" class="cinfo" data-act="edit" aria-label="Изменить данные записи">'+
+        '<div><b>Место</b><span>'+(r.place?esc(r.place):'не указано')+'</span></div>'+
+        '<div><b>Заметка</b><span>'+(r.note?esc(r.note):'нет')+'</span></div>'+
+        '<div><b>Время</b><span>'+fmtDate(r.date)+(r.by?' · снял(а): '+esc(r.by):'')+'</span></div>'+
+        '<div class="e">Нажмите, чтобы изменить</div></button>';
+    }
+    h+='<div class="cbody">'+tilesHTML(r.id)+infoH+
       '<div class="seg2" role="group" aria-label="Результат проверки"><button type="button" class="v" data-act="violator" aria-pressed="'+(r.status==='violator')+'">Нет в реестре</button><button type="button" class="o" data-act="ok" aria-pressed="'+(r.status==='ok')+'">Есть в реестре</button></div>'+(r.via==='shot'&&r.status!=='new'?'<p class="hint">Выбрано автоматически по скриншоту. Можно изменить кнопками, а повторное нажатие снимает отметку.</p>':'');
     var bd=r.badge||'unknown';
     h+='<div class="seg"><span class="sl">Знак «Инвалид» на стекле:</span>'+['yes','no','unknown'].map(function(k){return '<button type="button" data-b="'+k+'" data-act="badge" aria-pressed="'+(bd===k)+'">'+{yes:'Да',no:'Нет',unknown:'Не смотрел'}[k]+'</button>'}).join('')+'</div>';
@@ -2697,6 +2820,13 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
+
+
+
+
+
+
 
 
 
