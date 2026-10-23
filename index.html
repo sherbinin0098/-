@@ -1434,6 +1434,10 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(tab!=='check'){showTab('check');return true}
     return false;
   };
+  function applyTheme(){
+    try{if(window.AndroidApp&&AndroidApp.isDark)document.documentElement.setAttribute('data-theme',AndroidApp.isDark()?'dark':'light')}catch(e){}
+  }
+  window.__theme=applyTheme;applyTheme();
   load();assignVids();renderTpls();blocks=[newBlock()];curK=blocks[0].k;renderBlocks();render();tryPersist();
   // Сервис-воркер нужен только для установки приложения (APK/значок). Он ничего не кэширует.
   try{
@@ -1443,6 +1447,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
 
 
 
