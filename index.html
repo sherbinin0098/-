@@ -140,6 +140,14 @@ details.how ol{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:col
 .tpl{font:inherit;font-size:13.5px;font-weight:600;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:7px 12px;min-height:36px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tpl.x{border-color:var(--bad);color:var(--bad)}
 .tpl.act{border-style:dashed;color:var(--accent);background:transparent}
+.aclist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;margin-top:6px;box-shadow:0 6px 18px #0000001f}
+.aci{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:9px 12px;cursor:pointer;min-height:46px;justify-content:center}
+.aci+.aci{border-top:1px solid var(--line)}
+.aci:active,.aci:focus-visible{background:var(--accent-soft)}
+.acn{font-size:15px;font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acs{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ach{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 12px 5px;background:var(--bg)}
+.acwait{padding:10px 12px;white-space:normal}
 .ctab.plus{border-style:dashed;color:var(--accent);background:transparent}
 /* history */
 .hbar{display:flex;flex-direction:column;gap:8px}
@@ -221,7 +229,6 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
 .pin .shadow{position:absolute;bottom:-3px;width:10px;height:4px;border-radius:50%;background:#00000055}
 .mapbtns{display:flex;gap:8px;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-top:1px solid var(--line)}
 .mapbtns .btn{flex:1 1 0;padding:12px 8px}
-.quickbox{display:flex;flex-direction:column;gap:6px}
 .btn.quick{background:var(--fg);color:var(--bg);border-color:var(--fg);min-height:54px;font-size:16px}
 .btn.quick[aria-disabled=true]{opacity:.6;pointer-events:none}
 .chk{flex-direction:row;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted);font-weight:400}
@@ -249,7 +256,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     <div class="card">
       <label for="placeInput" class="lbl">Место <span class="opt">· общее для всех машин ниже</span></label>
       <div class="inline">
-        <input type="text" id="placeInput" list="placesDl" placeholder="ТЦ «Мега», парковка у входа 2">
+        <input type="text" id="placeInput" data-ac="1" autocomplete="off" placeholder="Магазин, адрес или как вы его зовёте">
         <button type="button" class="btn small" id="geoBtn">На карте</button>
       </div>
       <p class="geo" id="geoInfo" hidden></p>
@@ -332,7 +339,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       </ol>
     </details>
     <footer class="hint">
-      <p>Записи хранятся только в этом браузере на этом телефоне. Если очистить данные браузера или потерять телефон, они пропадут, поэтому иногда сохраняйте копию.</p>
+      <p id="storeNote">Записи хранятся только в этом браузере на этом телефоне. Если очистить данные браузера или потерять телефон, они пропадут, поэтому иногда сохраняйте копию.</p>
       <p>Официальная страница проверки: <a href="https://www.gosuslugi.ru/invalidam/check-transport" target="_blank" rel="noopener">gosuslugi.ru/invalidam/check-transport</a></p>
     </footer>
   </section>
@@ -344,7 +351,6 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   <button type="button" role="tab" data-tab="more" aria-selected="false" id="moreTab"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span>Ещё</button>
 </nav>
 <div class="toast" id="toast" role="status" hidden></div>
-<datalist id="placesDl"></datalist>
 <div class="mapx" id="mapall" hidden role="dialog" aria-label="Все случаи на карте">
   <div class="mapbar"><p class="maphint" id="allCount"></p><p class="legend"><span><i style="background:#c0352b"></i>Нет в реестре</span><span><i style="background:#1d7a46"></i>В реестре</span><span><i style="background:#8a6a12"></i>Не отмечено</span></p></div>
   <div class="mapwrap"><div id="map2"></div></div>
@@ -378,6 +384,8 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   var records=[],filter='all',openId=null,openV=null,editId=null,confirmId=null,query='';
   var imgCache={},pending={},newGeo=null,autoPlace=null,tab='check',histDirty=true,lastVisits=[];
   var blocks=[],keySeq=0,curK=null,sessionVid=null;
+  var F={dl:new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',year:'numeric'}),t:new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit'}),
+    wd:new Intl.DateTimeFormat('ru-RU',{weekday:'short'}),mon:new Intl.DateTimeFormat('ru-RU',{month:'short'}),dm:new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short'}),d:new Intl.DateTimeFormat('ru-RU')};
   var vidSeq=0;function newVid(){return 'p'+Date.now()+(++vidSeq)+Math.floor(Math.random()*900+100)}
   sessionVid=newVid();
 
@@ -401,6 +409,28 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function imgPut(k,v){return tx('readwrite',function(s){return s.put(v,k)})}
   function imgGet(k){return tx('readonly',function(s){return s.get(k)})}
   function imgDel(k){return tx('readwrite',function(s){return s.delete(k)})}
+  function imgPutMany(list){return tx('readwrite',function(s){list.forEach(function(e){s.put(e[1],e[0])});return null})}
+  function dataUrlToBlob(d){
+    var i=d.indexOf(','),meta=d.slice(5,i),mime=meta.split(';')[0]||'image/jpeg';
+    var raw=meta.indexOf(';base64')>=0?atob(d.slice(i+1)):decodeURIComponent(d.slice(i+1)),n=raw.length,u=new Uint8Array(n);
+    for(var j=0;j<n;j++)u[j]=raw.charCodeAt(j);
+    return new Blob([u],{type:mime});
+  }
+  function blobToDataUrl(b){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(fr.result)};fr.onerror=rej;fr.readAsDataURL(b)})}
+  // imgCache: key -> {b:Blob,u:objectURL}. Old revoked a bit later so a tile that still shows it does not blink.
+  function revokeLater(u){if(u)setTimeout(function(){URL.revokeObjectURL(u)},3000)}
+  function cacheSet(k,blob,url){var o=imgCache[k];if(o&&o.u!==url)revokeLater(o.u);imgCache[k]={b:blob,u:url||URL.createObjectURL(blob)};return imgCache[k]}
+  function cacheDrop(k){var o=imgCache[k];if(o)revokeLater(o.u);delete imgCache[k]}
+  // stored value may be an old base64 string: convert it and quietly write it back as a Blob
+  function getBlob(k,keep){
+    if(imgCache[k])return Promise.resolve(imgCache[k].b);
+    return imgGet(k).then(function(v){
+      if(!v)return null;
+      if(typeof v==='string'){try{v=dataUrlToBlob(v)}catch(e){return null}imgPut(k,v).catch(function(){})}
+      if(keep)cacheSet(k,v);
+      return v;
+    });
+  }
 
   function load(){
     try{var s=localStorage.getItem(KEY);if(s){records=JSON.parse(s)||[];migrate();return}}catch(e){}
@@ -413,8 +443,8 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function migrate(){
     records.forEach(function(r){
       if(typeof r.photo==='string'&&r.photo){
-        var k=r.id+':car',d=r.photo;imgCache[k]=d;
-        imgPut(k,d).then(function(){delete r.photo;r.car=true;save()},function(){});
+        var k=r.id+':car',b;try{b=dataUrlToBlob(r.photo)}catch(e){return}cacheSet(k,b);
+        imgPut(k,b).then(function(){delete r.photo;r.car=true;save()},function(){});
       }
     });
   }
@@ -436,7 +466,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
   function fmtDate(iso){
     var d=new Date(iso);
-    return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})+', '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    return F.dl.format(d)+', '+F.t.format(d);
   }
   function pretty(p){var m=RE.exec(p);return m?m[1]+' '+m[2]+' '+m[3]+' '+m[4]:p}
   function times(n){var a=n%10,b=n%100;return n+' '+((a>=2&&a<=4&&(b<10||b>=20))?'раза':'раз')}
@@ -479,12 +509,17 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   var llReady=null,map=null,pickCb=null,pickAddr=null,pickSeq=0,lookT=null;
   function loadFrom(i,res,rej){
     if(i>=LLS.length){rej();return}
-    var base=LLS[i],s=document.createElement('script');
+    var base=LLS[i],s=document.createElement('script'),done=false;
+    function fail(){if(done)return;done=true;clearTimeout(to);s.remove();loadFrom(i+1,res,rej)}
+    var to=setTimeout(fail,8000);
     s.src=base+'leaflet.js';
     s.onload=function(){
+      if(done&&!window.L)return;
+      var first=!done;done=true;clearTimeout(to);
+      if(!first)return;
       var l=document.createElement('link');l.rel='stylesheet';l.href=base+'leaflet.css';document.head.appendChild(l);res();
     };
-    s.onerror=function(){s.remove();loadFrom(i+1,res,rej)};
+    s.onerror=fail;
     document.head.appendChild(s);
   }
   function loadLeaflet(){
@@ -590,6 +625,211 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     });
   });
 
+  // ---------- place dropdown: your earlier places + shops/addresses nearby ----------
+  var AC={el:null,box:null,used:[],near:[],ns:'',nq:'',t:null,seq:0,fix:null,fixing:false,lastNet:0,here:null,hereKey:''};
+  // text for comparing: no case, no ё, no punctuation; "ул.", "д." and similar words do not matter
+  function fold(s){return (s||'').toLowerCase().replace(/ё/g,'е').replace(/[.,;:«»"'„“”()№#\-–—\/]/g,' ').replace(/\s+/g,' ').trim()}
+  var STOP={'ул':1,'улица':1,'д':1,'дом':1,'пр':1,'пр-т':1,'просп':1,'проспект':1,'пер':1,'переулок':1,'г':1,'город':1,'и':1,'на':1,'у':1};
+  function words(s){return fold(s).split(' ').filter(function(w){return w&&!STOP[w]})}
+  function pkey(s){return words(s).join(' ')}
+  function lev(a,b){
+    var m=a.length,n=b.length,p=[],c,i,j;
+    for(j=0;j<=n;j++)p[j]=j;
+    for(i=1;i<=m;i++){c=[i];for(j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1));p=c}
+    return p[n];
+  }
+  // 2 = word starts the same, 1 = with a typo, 0 = no
+  function wordHit(w,list){
+    var best=0,num=/^\d/.test(w),max=w.length>=7?2:w.length>=4?1:0;
+    for(var i=0;i<list.length;i++){
+      var x=list[i];
+      if(x.indexOf(w)===0)return 2;
+      if(num||!max)continue;
+      if(lev(w,x.slice(0,w.length))<=max||lev(w,x)<=max)best=1;
+    }
+    return best;
+  }
+  // how well the typed text fits a name: -1 = does not fit
+  function fit(q,name){
+    var qw=words(q),nw=words(name),s=0;
+    for(var i=0;i<qw.length;i++){var h=wordHit(qw[i],nw);if(!h)return -1;s+=h}
+    return s;
+  }
+  function fmtDist(d){return d<1000?Math.max(10,Math.round(d/10)*10)+' м':(d/1000).toFixed(d<10000?1:0).replace('.',',')+' км'}
+  function usedPlaces(){
+    var m={};
+    records.forEach(function(r){
+      if(r.example)return;var p=(r.place||'').trim();if(!p)return;
+      var k=pkey(p),o=m[k]||(m[k]={name:p,n:0,last:'',geo:null,tpl:false});
+      o.n++;
+      if(r.date>o.last){o.last=r.date;o.name=p;if(r.geo)o.geo=r.geo}else if(!o.geo&&r.geo)o.geo=r.geo;
+    });
+    loadPlaces().forEach(function(t){
+      var k=pkey(t.name),o=m[k]||(m[k]={name:t.name,n:0,last:'',geo:null});
+      o.tpl=true;if(t.geo)o.geo=t.geo;
+    });
+    return Object.keys(m).map(function(k){return m[k]});
+  }
+  function rankPlaces(list,q,ref){
+    var f=fold(q),now=Date.now();
+    return list.filter(function(o){var n=fold(o.name);return n!==f&&(o._fit=fit(q,o.name))>=0}).map(function(o){
+      var n=fold(o.name),d=ref&&o.geo?dist(ref,o.geo):null,s=o._fit*5;
+      if(f&&n.indexOf(f)===0)s+=30;
+      if(o.tpl)s+=15;
+      if(d!=null)s+=d<200?40:d<1000?20:d<5000?5:0;
+      s+=Math.min(o.n,10)*2;
+      if(o.last)s+=Math.max(0,20-(now-new Date(o.last).getTime())/2592e5);
+      o._d=d;o._s=s;return o;
+    }).sort(function(a,b){return b._s-a._s}).slice(0,6);
+  }
+  function acRef(){
+    var row=AC.el&&AC.el.closest('.crow'),r=row&&byId(row.dataset.id);
+    if(r&&r.geo)return r.geo;
+    if(newGeo)return newGeo;
+    if(AC.fix)return AC.fix;
+    var last=null;records.forEach(function(x){if(x.geo&&!x.example&&(!last||x.date>last.date))last=x});
+    return last?last.geo:null;
+  }
+  // where am I, without a permission question if it was not allowed yet
+  function acSilentFix(){
+    if(AC.fix||AC.fixing||!navigator.permissions||!navigator.geolocation)return;
+    AC.fixing=true;
+    navigator.permissions.query({name:'geolocation'}).then(function(s){
+      if(s.state!=='granted'){AC.fixing=false;return}
+      getFix().then(function(g){AC.fixing=false;if(g){AC.fix=g;hereLookup();if(AC.el)acUpdate()}});
+    },function(){AC.fixing=false});
+  }
+  function hereRef(){return AC.fix||newGeo}
+  function hereLookup(){
+    var g=hereRef();if(!g)return;
+    var key=g.lat.toFixed(4)+','+g.lon.toFixed(4);if(key===AC.hereKey)return;AC.hereKey=key;
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ru&zoom=18&addressdetails=1&lat='+g.lat+'&lon='+g.lon)
+      .then(function(r){return r.ok?r.json():null}).then(function(j){
+        var ad=j&&j.address;if(!ad)return;
+        var road=ad.road||ad.pedestrian||ad.footway;if(!road)return;
+        AC.here={road:road,house:ad.house_number||'',geo:{lat:g.lat,lon:g.lon,acc:g.acc||null,manual:!!g.manual}};
+        if(AC.el)acUpdate();
+      }).catch(function(){AC.hereKey=''});
+  }
+  // the typed text is my street (and my house number, if one is typed)
+  function hereItem(q){
+    var h=AC.here;if(!h||!q)return null;
+    var qw=words(q),rw=words(h.road),num=null,ok=0;
+    for(var i=0;i<qw.length;i++){
+      if(/^\d/.test(qw[i])){num=qw[i];continue}
+      if(!wordHit(qw[i],rw))return null;ok++;
+    }
+    if(!ok)return null;
+    if(num&&h.house&&fold(h.house).indexOf(num)!==0)return null;
+    return {name:h.road+(h.house?', '+h.house:''),geo:h.geo};
+  }
+  function photon(q,ref){
+    var ctl=window.AbortController?new AbortController():null,to=setTimeout(function(){if(ctl)ctl.abort()},7000);
+    var u='https://photon.komoot.io/api/?limit=10&lang=default&q='+encodeURIComponent(q)+(ref?'&lat='+ref.lat.toFixed(5)+'&lon='+ref.lon.toFixed(5)+'&zoom=14&location_bias_scale=0.1':'');
+    return fetch(u,ctl?{signal:ctl.signal}:{}).then(function(r){clearTimeout(to);if(!r.ok)throw new Error('http');return r.json()}).then(function(j){
+      var seen={},out=[];
+      ((j&&j.features)||[]).forEach(function(f){
+        var p=f.properties||{},c=f.geometry&&f.geometry.coordinates;if(!c)return;
+        if(/^(country|state|region|county|continent)$/.test(p.type||p.osm_value||''))return;
+        var g={lat:+c[1],lon:+c[0]},d=ref?dist(ref,g):null;
+        if(d!=null&&d>30000)return;
+        var street=[p.street,p.housenumber].filter(Boolean).join(', ');
+        var name=p.name||street;if(!name)return;
+        var label=p.name&&street&&p.name!==street?p.name+', '+street:name;
+        var key=fold(label);if(seen[key])return;seen[key]=1;
+        out.push({label:label,house:p.housenumber||'',city:p.city||p.town||p.village||p.locality||p.district||'',geo:g,d:d});
+      });
+      var qn=(words(q).filter(function(w){return /^\d/.test(w)})[0])||'';
+      out.forEach(function(o){o.k=(o.d==null?0:o.d)-(qn&&o.house&&fold(o.house)===qn?1e6:0)});
+      if(ref||qn)out.sort(function(a,b){return a.k-b.k});
+      return out.slice(0,5);
+    },function(e){clearTimeout(to);throw e});
+  }
+  function acNet(q){
+    clearTimeout(AC.t);
+    if(q.length<3){AC.seq++;AC.near=[];AC.ns='';AC.nq='';return}
+    if(q===AC.nq&&AC.ns==='done')return;
+    AC.ns='loading';var seq=++AC.seq;
+    AC.t=setTimeout(function(){
+      // the public map search asks for no more than one request a second
+      setTimeout(function(){
+        if(seq!==AC.seq)return;
+        AC.lastNet=Date.now();
+        var ref=acRef();
+        (ref?Promise.resolve(ref):getFix().then(function(g){if(g)AC.fix=g;return g})).then(function(r){
+          if(seq!==AC.seq)return;
+          return photon(q,r).then(function(list){if(seq!==AC.seq)return;AC.near=list;AC.ns='done';AC.nq=q;acRender()});
+        }).catch(function(){if(seq===AC.seq){AC.ns='fail';AC.near=[];acRender()}});
+      },Math.max(0,1000-(Date.now()-AC.lastNet)));
+    },500);
+  }
+  function acUpdate(){
+    if(!AC.el)return;
+    var q=AC.el.value.trim();
+    AC.used=rankPlaces(usedPlaces(),q,acRef());
+    AC.hi=hereItem(q);
+    if(AC.hi)AC.used=AC.used.filter(function(o){return pkey(o.name)!==pkey(AC.hi.name)});
+    acNet(q);acRender();
+  }
+  function acRender(){
+    var el=AC.el;if(!el)return;
+    if(!AC.box){
+      AC.box=document.createElement('div');AC.box.className='aclist';AC.box.setAttribute('role','listbox');
+      AC.box.addEventListener('mousedown',function(e){e.preventDefault()});
+      AC.box.addEventListener('click',acPick);
+    }
+    var box=AC.box,h='',near=AC.ns==='loading'||(AC.ns==='done'&&AC.near.length);
+    if(AC.hi)h+='<button type="button" class="aci" role="option" data-i="h0"><span class="acn">📍 '+esc(AC.hi.name)+'</span><span class="acs">дом, у которого вы сейчас</span></button>';
+    if(AC.used.length&&near)h+='<div class="ach">Ваши места</div>';
+    AC.used.forEach(function(o,i){
+      var sub=[o.n?'было '+times(o.n):'шаблон'];
+      if(o.last)sub.push(F.dm.format(new Date(o.last)));
+      if(o._d!=null)sub.push(fmtDist(o._d));
+      h+='<button type="button" class="aci" role="option" data-i="u'+i+'"><span class="acn">'+(o.tpl?'★ ':'')+esc(o.name)+'</span><span class="acs">'+sub.join(' · ')+'</span></button>';
+    });
+    if(AC.ns==='loading')h+='<div class="ach">Рядом на карте</div><div class="acs acwait">Ищу…</div>';
+    else if(AC.ns==='done'&&AC.near.length){
+      h+='<div class="ach">Рядом на карте</div>';
+      AC.near.forEach(function(o,i){
+        var sub=[];if(o.city)sub.push(o.city);if(o.d!=null)sub.push(fmtDist(o.d));
+        if(AC.hi&&pkey(o.label)===pkey(AC.hi.name))return;
+        if(AC.used.some(function(u){return pkey(u.name)===pkey(o.label)}))return;
+        h+='<button type="button" class="aci" role="option" data-i="n'+i+'"><span class="acn">'+esc(o.label)+'</span><span class="acs">'+esc(sub.join(' · ')||'на карте')+'</span></button>';
+      });
+    }else if(AC.ns==='done'&&!AC.used.length)h+='<div class="acs acwait">Рядом ничего не нашлось. Впишите своё название или отметьте место кнопкой «На карте».</div>';
+    else if(AC.ns==='fail'&&!AC.used.length)h+='<div class="acs acwait">Поиск по карте сейчас не отвечает. Впишите название сами или отметьте место «На карте».</div>';
+    if(!h){box.hidden=true;box.innerHTML='';return}
+    box.innerHTML=h;box.hidden=false;
+    var host=el.parentNode;
+    if(box.previousElementSibling!==host)host.insertAdjacentElement('afterend',box);
+  }
+  function acClose(){
+    clearTimeout(AC.t);AC.seq++;AC.el=null;AC.ns='';AC.near=[];AC.nq='';
+    if(AC.box){AC.box.hidden=true;AC.box.innerHTML=''}
+  }
+  function acPick(e){
+    var t=e.target.closest('.aci'),el=AC.el;if(!t||!el)return;
+    var i=t.dataset.i,name,geo;
+    if(i.charAt(0)==='h'){if(!AC.hi)return;name=AC.hi.name;geo=AC.hi.geo}
+    else if(i.charAt(0)==='u'){var o=AC.used[+i.slice(1)];if(!o)return;name=o.name;geo=o.geo}
+    else{var n=AC.near[+i.slice(1)];if(!n)return;name=n.label;geo={lat:n.geo.lat,lon:n.geo.lon,acc:null,manual:true}}
+    el.value=name;acClose();el.blur();
+    if(el.id==='placeInput'){
+      autoPlace=null;
+      if(geo){newGeo=geo;$('geoInfo').innerHTML=geoHTML(geo);$('geoInfo').hidden=false}
+      toast('Место: '+name);applySessionPlace();renderTpls();
+      return;
+    }
+    var row=el.closest('.crow'),r=row&&byId(row.dataset.id);if(!r)return;
+    r.place=name;delete r.autoPlace;
+    if(geo&&(i.charAt(0)==='n'||!r.geo))r.geo=geo;
+    save();render();toast('Место сохранено');
+  }
+  document.addEventListener('focusin',function(e){var t=e.target;if(t.dataset&&t.dataset.ac){AC.el=t;acSilentFix();hereLookup();acUpdate()}});
+  document.addEventListener('input',function(e){if(e.target===AC.el)acUpdate()});
+  document.addEventListener('focusout',function(e){var t=e.target;if(t===AC.el)setTimeout(function(){if(AC.el===t&&document.activeElement!==t)acClose()},150)});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&AC.el)acClose()});
+
   // ---------- repeat offenders ----------
   function sameplate(plate,exceptId){
     if(!plate)return [];
@@ -598,46 +838,47 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
 
   // ---------- photo slots ----------
-  function compress(file,slot){
+  function loadImage(src){return new Promise(function(res,rej){var img=new Image();img.onload=function(){res(img)};img.onerror=rej;img.src=src})}
+  function canvasBlob(c,q){
     return new Promise(function(res,rej){
-      var img=new Image(),url=URL.createObjectURL(file);
-      img.onload=function(){
-        var max=SIZE[slot][0],s=Math.min(1,max/Math.max(img.width,img.height));
-        var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
-        var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
-        URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',SIZE[slot][1]));
-      };
-      img.onerror=function(){URL.revokeObjectURL(url);rej()};
-      img.src=url;
+      if(c.toBlob)c.toBlob(function(b){c.width=c.height=0;b?res(b):rej()},'image/jpeg',q);
+      else{var d=c.toDataURL('image/jpeg',q);c.width=c.height=0;res(dataUrlToBlob(d))}
     });
   }
-  function stampImage(dataUrl,lines){
-    return new Promise(function(res){
-      var img=new Image();
-      img.onload=function(){
-        var w=img.width,h=img.height,c=document.createElement('canvas');c.width=w;c.height=h;
-        var g=c.getContext('2d');g.drawImage(img,0,0);
-        var fs=Math.max(14,Math.round(w*0.032)),pad=Math.round(fs*0.6),lh=Math.round(fs*1.3);
-        g.font='600 '+fs+'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';g.textBaseline='top';
-        var out=[];
-        lines.filter(Boolean).forEach(function(t){
-          var words=String(t).split(' '),cur='';
-          words.forEach(function(wd){
-            var test=cur?cur+' '+wd:wd;
-            if(g.measureText(test).width>w-2*pad&&cur){out.push(cur);cur=wd}else cur=test;
-          });
-          if(cur)out.push(cur);
+  function compress(file,slot){
+    var url=URL.createObjectURL(file);
+    return loadImage(url).then(function(img){
+      URL.revokeObjectURL(url);
+      var w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,SIZE[slot][0]/Math.max(w,h));
+      var c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+      var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+      return canvasBlob(c,SIZE[slot][1]);
+    },function(e){URL.revokeObjectURL(url);throw e});
+  }
+  function stampImage(blob,lines){
+    var url=URL.createObjectURL(blob);
+    return loadImage(url).then(function(img){
+      URL.revokeObjectURL(url);
+      var w=img.naturalWidth,h=img.naturalHeight,c=document.createElement('canvas');c.width=w;c.height=h;
+      var g=c.getContext('2d');g.drawImage(img,0,0);
+      var fs=Math.max(14,Math.round(w*0.032)),pad=Math.round(fs*0.6),lh=Math.round(fs*1.3);
+      g.font='600 '+fs+'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';g.textBaseline='top';
+      var out=[];
+      lines.filter(Boolean).forEach(function(t){
+        var words=String(t).split(' '),cur='';
+        words.forEach(function(wd){
+          var test=cur?cur+' '+wd:wd;
+          if(g.measureText(test).width>w-2*pad&&cur){out.push(cur);cur=wd}else cur=test;
         });
-        if(!out.length){res(dataUrl);return}
-        var bh=out.length*lh+pad*2-Math.round((lh-fs)/2);
-        g.fillStyle='rgba(0,0,0,0.58)';g.fillRect(0,h-bh,w,bh);
-        g.fillStyle='#ffffff';
-        out.forEach(function(t,i){g.fillText(t,pad,h-bh+pad+i*lh)});
-        res(c.toDataURL('image/jpeg',0.72));
-      };
-      img.onerror=function(){res(dataUrl)};
-      img.src=dataUrl;
-    });
+        if(cur)out.push(cur);
+      });
+      if(!out.length){c.width=c.height=0;return blob}
+      var bh=out.length*lh+pad*2-Math.round((lh-fs)/2);
+      g.fillStyle='rgba(0,0,0,0.58)';g.fillRect(0,h-bh,w,bh);
+      g.fillStyle='#ffffff';
+      out.forEach(function(t,i){g.fillText(t,pad,h-bh+pad+i*lh)});
+      return canvasBlob(c,0.72);
+    },function(){URL.revokeObjectURL(url);return blob});
   }
   function stampLines(o){
     return [fmtDate(o.date),o.place||'',o.geo?o.geo.lat.toFixed(5)+', '+o.geo.lon.toFixed(5):''];
@@ -645,73 +886,85 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function stampOn(){return $('stampChk').checked}
 
   // ---------- photos: fixed-size tiles + full-screen viewer ----------
-  function byId(id){return records.find(function(x){return x.id===id})}
   function blockBy(k){return blocks.find(function(b){return b.k===k})}
   function blockEl(k){return document.querySelector('.car[data-k="'+k+'"]')}
   function srcFor(r,slot){
     var k=r.id+':'+slot;
-    if(imgCache[k])return imgCache[k];
-    if(slot==='car'&&typeof r.photo==='string'&&r.photo)return r.photo;
+    if(imgCache[k])return imgCache[k].u;
     if(!r[slot])return null;
     if(!pending[k]){
       pending[k]=1;
-      imgGet(k).then(function(d){delete pending[k];if(d)imgCache[k]=d;else{r[slot]=false;save()}refreshTiles(r.id)},
+      getBlob(k,true).then(function(b){delete pending[k];if(!b){r[slot]=false;save()}refreshTiles(r.id,slot)},
                      function(){delete pending[k]});
     }
     return 'loading';
   }
   function srcOf(scope,slot){
-    if(scope.indexOf('b:')===0){var b=blockBy(scope.slice(2));return b?b.img[slot]:null}
+    if(scope.indexOf('b:')===0){var b=blockBy(scope.slice(2)),o=b&&b.img[slot];return o?o.u:null}
     var r=byId(scope);return r?srcFor(r,slot):null;
+  }
+  function blobOf(scope,slot){
+    if(scope.indexOf('b:')===0){var b=blockBy(scope.slice(2)),o=b&&b.img[slot];return o?o.b:null}
+    var o2=imgCache[scope+':'+slot];return o2?o2.b:null;
   }
   function tileHTML(scope,slot,src){
     var cap=TILE[slot],a=' data-scope="'+scope+'" data-slot="'+slot+'"';
     if(src==='loading')return '<div class="tile"'+a+'><span class="tl">Загрузка…</span></div>';
-    if(src)return '<button type="button" class="tile has"'+a+' data-tview="1" aria-label="'+SLOT[slot]+': открыть"><img src="'+src+'" alt=""><span class="tcap">'+cap+'</span></button>';
+    if(src)return '<button type="button" class="tile has"'+a+' data-tview="1" aria-label="'+SLOT[slot]+': открыть"><img src="'+src+'" alt="" decoding="async"><span class="tcap">'+cap+'</span></button>';
     return '<label class="tile"'+a+'><input type="file" accept="image/*" class="vh" data-pick="1"><span class="plus">+</span><span class="tl">'+cap+'</span></label>';
   }
   function tilesInner(scope){return tileHTML(scope,'car',srcOf(scope,'car'))+tileHTML(scope,'shot',srcOf(scope,'shot'))}
   function tilesHTML(scope){return '<div class="tiles" data-tiles="'+scope+'">'+tilesInner(scope)+'</div>'}
-  function refreshTiles(scope){
-    Array.prototype.forEach.call(document.querySelectorAll('.tiles[data-tiles="'+scope+'"]'),function(el){el.innerHTML=tilesInner(scope)});
+  // only the changed tile is redrawn: the other one may have the file picker open right now
+  function refreshTiles(scope,slot){
+    Array.prototype.forEach.call(document.querySelectorAll('.tiles[data-tiles="'+scope+'"]'),function(el){
+      var t=slot&&el.querySelector('[data-slot="'+slot+'"]');
+      if(t)t.outerHTML=tileHTML(scope,slot,srcOf(scope,slot));else el.innerHTML=tilesInner(scope);
+    });
     if(vw&&vw.scope===scope){var s=srcOf(scope,vw.slot);if(s&&s!=='loading')$('viewerImg').src=s;else closeViewer()}
   }
+  function setBlockImg(b,slot,blob){
+    var o=b.img[slot];if(o)revokeLater(o.u);
+    b.img[slot]=blob?{b:blob,u:URL.createObjectURL(blob)}:null;
+  }
+  function dropBlock(b){if(!b.rid){setBlockImg(b,'car',null);setBlockImg(b,'shot',null)}}
   function setImg(scope,slot,d){
     if(scope.indexOf('b:')===0){
       var b=blockBy(scope.slice(2));if(!b)return Promise.resolve();
-      b.img[slot]=d;refreshTiles(scope);return Promise.resolve();
+      setBlockImg(b,slot,d);refreshTiles(scope,slot);return Promise.resolve();
     }
     var r=byId(scope);if(!r)return Promise.resolve();
     var k=r.id+':'+slot;
     var pre=(slot==='car'&&stampOn())?stampImage(d,stampLines(r)):Promise.resolve(d);
-    return pre.then(function(x){d=x;return imgPut(k,d)}).then(function(){imgCache[k]=d;r[slot]=true;if(slot==='car')delete r.photo;save();refreshTiles(scope);toast(SLOT[slot]+': сохранено')},
+    return pre.then(function(x){d=x;return imgPut(k,d)}).then(function(){cacheSet(k,d);r[slot]=true;if(slot==='car')delete r.photo;save();refreshTiles(scope,slot);toast(SLOT[slot]+': сохранено')},
                      function(){toast('Не удалось сохранить фото. Возможно, память телефона заполнена.')});
   }
   function removeImg(scope,slot){
     if(scope.indexOf('b:')===0){
       var b=blockBy(scope.slice(2));if(!b)return;
-      b.img[slot]=null;refreshTiles(scope);return;
+      setBlockImg(b,slot,null);refreshTiles(scope,slot);return;
     }
     var r=byId(scope);if(!r)return;
     var k=r.id+':'+slot;
     imgDel(k).then(function(){},function(){});
-    delete imgCache[k];r[slot]=false;if(slot==='car')delete r.photo;save();refreshTiles(scope);toast(SLOT[slot]+': убрано');
+    cacheDrop(k);r[slot]=false;if(slot==='car')delete r.photo;save();refreshTiles(scope,slot);toast(SLOT[slot]+': убрано');
   }
   var NATIVE=!!window.AndroidApp;
-  function blobB64(blob){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(String(fr.result).split(',')[1]||'')};fr.onerror=rej;fr.readAsDataURL(blob)})}
-  function downloadData(dataUrl,name){
-    if(NATIVE){
-      var m=/^data:([^;,]+)[^,]*,(.*)$/.exec(dataUrl);
-      if(m){try{AndroidApp.save(name,m[1],m[2]);toast('Фото сохранено в загрузки: '+name,3500)}catch(e){toast('Не удалось сохранить фото')}return}
+  function blobB64(blob){return blobToDataUrl(blob).then(function(d){return String(d).split(',')[1]||''})}
+  // In the APK files go to Java in pieces: one huge string over the bridge can run out of memory.
+  function nativeFile(blob,name,mode){
+    var A=window.AndroidApp,mime=blob.type||'application/octet-stream';
+    if(typeof A.fileStart!=='function'){
+      return blobB64(blob).then(function(b){return (mode==='share'?A.share(name,mime,b):A.save(name,mime,b))!==false},function(){return false});
     }
-    function go(href,revoke){
-      var a=document.createElement('a');a.href=href;a.download=name;document.body.appendChild(a);a.click();
-      setTimeout(function(){document.body.removeChild(a);if(revoke)URL.revokeObjectURL(href)},4000);
-      toast('Фото сохранено в загрузки: '+name,3500);
+    var CH=1572864,pos=0,id=A.fileStart(name);
+    if(!id)return Promise.resolve(false);
+    function next(){
+      if(pos>=blob.size)return A.fileEnd(id,mime,mode);
+      var part=blob.slice(pos,pos+CH);pos+=CH;
+      return blobB64(part).then(function(b){if(!A.fileChunk(id,b))throw new Error('chunk');return next()});
     }
-    try{
-      fetch(dataUrl).then(function(r){return r.blob()}).then(function(b){go(URL.createObjectURL(b),true)}).catch(function(){go(dataUrl,false)});
-    }catch(e){go(dataUrl,false)}
+    return Promise.resolve().then(next).catch(function(){return false});
   }
   function photoName(scope,slot){
     var r=byId(scope),b=scope.indexOf('b:')===0?blockBy(scope.slice(2)):null;
@@ -743,7 +996,10 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     openViewer(t.dataset.scope,t.dataset.slot);
   });
   $('vClose').addEventListener('click',closeViewer);
-  $('vDl').addEventListener('click',function(){if(vw)downloadData($('viewerImg').src,photoName(vw.scope,vw.slot))});
+  $('vDl').addEventListener('click',function(){
+    if(!vw)return;var b=blobOf(vw.scope,vw.slot),nm=photoName(vw.scope,vw.slot);
+    if(b)downloadBlob(b,nm,'Фото сохранено в загрузки: '+nm);
+  });
   $('vRm').addEventListener('click',function(){vConfirm(true)});
   $('vNo').addEventListener('click',function(){vConfirm(false)});
   $('vYes').addEventListener('click',function(){if(!vw)return;var v=vw;closeViewer();removeImg(v.scope,v.slot)});
@@ -849,7 +1105,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function resetSession(){
     $('placeInput').value='';$('noteInput').value='';$('dateInput').value='';newGeo=null;autoPlace=null;$('geoInfo').hidden=true;
     $('moreD').open=false;sessionVid=newVid();renderTpls();
-    blocks=[newBlock()];curK=blocks[0].k;renderBlocks();
+    blocks.forEach(dropBlock);blocks=[newBlock()];curK=blocks[0].k;renderBlocks();
   }
   function sessionRecord(plate,badge,when){
     var rec={id:'r'+Date.now()+Math.floor(Math.random()*90+10),plate:plate,place:$('placeInput').value.trim(),note:$('noteInput').value.trim(),status:'new',badge:badge,date:fromLocalInput($('dateInput').value)||when||new Date().toISOString(),car:false,shot:false,geo:newGeo,pub:false};
@@ -884,7 +1140,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       return;
     }
     var a=t.dataset.bact;
-    if(a==='rm'){var ix=blocks.indexOf(b);blocks=blocks.filter(function(x){return x.k!==b.k});curK=blocks[Math.max(0,ix-1)].k;renderBlocks();return}
+    if(a==='rm'){dropBlock(b);var ix=blocks.indexOf(b);blocks=blocks.filter(function(x){return x.k!==b.k});curK=blocks[Math.max(0,ix-1)].k;renderBlocks();return}
     if(a==='res'){if(r){mark(r.id,t.dataset.st);toast(t.dataset.st==='violator'?'Отмечено: нет в реестре. Можно прикрепить скриншот.':'Отмечено: есть в реестре')}return}
     if(a==='again'){
       if(!r||!r.plate){e.preventDefault();toast('Сначала впишите номер');var pi=car.querySelector('input.plateEdit');if(pi)pi.focus();return}
@@ -896,16 +1152,17 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       copy(p,'Номер '+p+' скопирован. Вставьте его на сайте.');
       var rec=sessionRecord(p,b.badge,b.when);
       ['car','shot'].forEach(function(slot){
-        var d=b.img[slot];if(!d)return;
-        var k=rec.id+':'+slot;imgCache[k]=d;rec[slot]=true;
-        imgPut(k,d).catch(function(){toast('Не удалось сохранить фото. Возможно, память телефона заполнена.')});
+        var o=b.img[slot];if(!o)return;
+        var k=rec.id+':'+slot;cacheSet(k,o.b,o.u);rec[slot]=true;
+        imgPut(k,o.b).catch(function(){toast('Не удалось сохранить фото. Возможно, память телефона заполнена.')});
       });
       records=records.filter(function(x){return !x.example});
       records.push(rec);save();
       if(rec.car&&stampOn()){
-        var rid=rec.id,orig=b.img.car;
+        var rid=rec.id,orig=b.img.car.b;
         stampImage(orig,stampLines(rec)).then(function(st){
-          var k=rid+':car';imgCache[k]=st;imgPut(k,st).catch(function(){});refreshTiles(rid);
+          if(st===orig)return;
+          var k=rid+':car';imgPut(k,st).then(function(){cacheSet(k,st);refreshTiles(rid,'car')},function(){});
         });
       }
       var oldKey=b.k;b.rid=rec.id;b.img={car:null,shot:null};
@@ -953,7 +1210,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       }
       r.car=true;
       var pre=stampOn()?stampImage(v.d,stampLines(r)):Promise.resolve(v.d);
-      return pre.then(function(x){var k=r.id+':car';imgCache[k]=x;return imgPut(k,x)}).then(function(){
+      return pre.then(function(x){var k=r.id+':car';return imgPut(k,x).then(function(){cacheSet(k,x)})}).then(function(){
         records=records.filter(function(x){return !x.example});
         records.push(r);save();
         var nb=newBlock();nb.rid=r.id;
@@ -970,7 +1227,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
 
   // ---------- tabs ----------
   function showTab(n){
-    tab=n;
+    tab=n;acClose();
     ['check','hist','more'].forEach(function(k){$('tab-'+k).hidden=(k!==n)});
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){b.setAttribute('aria-selected',b.dataset.tab===n?'true':'false')});
     if(n==='hist'&&histDirty)renderHist();
@@ -981,7 +1238,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     b.addEventListener('click',function(){showTab(b.dataset.tab)});
   });
   function render(){
-    histDirty=true;updatePlaces();
+    histDirty=true;
     if(tab==='hist')renderHist();
     refreshBlocks();bkInfo();
   }
@@ -1003,11 +1260,6 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       return (nq&&r.plate.indexOf(nq)>=0)||(r.place||'').toLowerCase().indexOf(lq)>=0||(r.note||'').toLowerCase().indexOf(lq)>=0;
     }).sort(function(a,b){return a.date<b.date?1:-1});
   }
-  function updatePlaces(){
-    var f={};records.forEach(function(r){var p=(r.place||'').trim();if(p)f[p]=(f[p]||0)+1});
-    var list=Object.keys(f).sort(function(a,b){return f[b]-f[a]||a.localeCompare(b,'ru')}).slice(0,40);
-    $('placesDl').innerHTML=list.map(function(p){return '<option value="'+esc(p)+'"></option>'}).join('');
-  }
   function dayKey(iso){var d=new Date(iso);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()}
   function normPlace(s){return (s||'').toLowerCase().replace(/\s+/g,' ').trim()}
   function dist(a,b){
@@ -1024,13 +1276,16 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function buildVisits(rows){
     var s=byDateAsc(rows),par=s.map(function(_,i){return i});
     function find(i){while(par[i]!==i){par[i]=par[par[i]];i=par[i]}return i}
-    var vm={};
-    s.forEach(function(r,i){if(!r.vid)return;if(vm[r.vid]==null)vm[r.vid]=i;else{var a=find(i),b=find(vm[r.vid]);if(a!==b)par[a]=b}});
-    for(var i=0;i<s.length;i++){
-      var dk=dayKey(s[i].date);
-      for(var j=i+1;j<s.length&&dayKey(s[j].date)===dk;j++){
-        if(!s[i].vid&&!s[j].vid&&sameVisit(s[i],s[j])){var a=find(i),b=find(j);if(a!==b)par[b]=a}
-      }
+    function join(i,j){var a=find(i),b=find(j);if(a!==b)par[b]=a}
+    var vm={},loose=[];
+    s.forEach(function(r,i){
+      if(!r.vid){loose.push(i);return}
+      if(vm[r.vid]==null)vm[r.vid]=i;else join(vm[r.vid],i);
+    });
+    // only old records without a parking id are grouped by the day + place rule
+    if(loose.length){
+      var dk=loose.map(function(i){return dayKey(s[i].date)});
+      for(var x=0;x<loose.length;x++)for(var y=x+1;y<loose.length&&dk[y]===dk[x];y++)if(sameVisit(s[loose[x]],s[loose[y]]))join(loose[x],loose[y]);
     }
     var map={},out=[];
     s.forEach(function(r,i){
@@ -1051,27 +1306,37 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function declinedSet(){try{return JSON.parse(localStorage.getItem(DK)||'{}')||{}}catch(e){return {}}}
   function pairKey(a,b){return a.vid<b.vid?a.vid+'|'+b.vid:b.vid+'|'+a.vid}
   function ms(iso){return new Date(iso).getTime()}
-  function suggestionFor(v,all,dec){
-    var best=null;
-    all.forEach(function(o){
-      if(o===v||!o.vid||!v.vid||o.vid===v.vid||dec[pairKey(v,o)])return;
-      if(dayKey(o.list[0].date)!==dayKey(v.list[0].date)&&dayKey(o.last)!==dayKey(v.list[0].date))return;
-      var s1=ms(v.list[0].date),e1=ms(v.last),s2=ms(o.list[0].date),e2=ms(o.last);
-      if(Math.max(0,s1-e2,s2-e1)>3*36e5)return;
-      var dmin=null,samePlace=false;
-      v.list.forEach(function(x){o.list.forEach(function(y){
-        if(x.geo&&y.geo){var d=dist(x.geo,y.geo);if(dmin==null||d<dmin)dmin=d}
-        if(normPlace(x.place)&&normPlace(x.place)===normPlace(y.place))samePlace=true;
-      })});
-      if(!(samePlace||(dmin!=null&&dmin<=150)))return;
-      if(!best||(dmin!=null&&(best.d==null||dmin<best.d)))best={o:o,d:dmin};
+  // one pass over all parkings; candidates only from the same day
+  function computeSuggestions(all){
+    var dec=declinedSet(),byDay={},res={};
+    all.forEach(function(v){
+      if(!v.vid)return;
+      v._d1=dayKey(v.list[0].date);v._d2=dayKey(v.last);v._s=ms(v.list[0].date);v._e=ms(v.last);
+      (byDay[v._d1]=byDay[v._d1]||[]).push(v);
+      if(v._d2!==v._d1)(byDay[v._d2]=byDay[v._d2]||[]).push(v);
     });
-    return best;
+    all.forEach(function(v){
+      if(!v.vid)return;
+      var best=null;
+      (byDay[v._d1]||[]).forEach(function(o){
+        if(o===v||o.vid===v.vid||dec[pairKey(v,o)])return;
+        if(Math.max(0,v._s-o._e,o._s-v._e)>3*36e5)return;
+        var dmin=null,samePlace=false;
+        v.list.forEach(function(x){o.list.forEach(function(y){
+          if(x.geo&&y.geo){var d=dist(x.geo,y.geo);if(dmin==null||d<dmin)dmin=d}
+          if(!samePlace&&x.place&&normPlace(x.place)===normPlace(y.place))samePlace=true;
+        })});
+        if(!(samePlace||(dmin!=null&&dmin<=150)))return;
+        if(!best||(dmin!=null&&(best.d==null||dmin<best.d)))best={o:o,d:dmin};
+      });
+      if(best&&!(best.o.last>v.last))res[v.vid]=best;  // show the hint once, on the newer parking
+    });
+    return res;
   }
+  var suggs={};
   function suggHTML(v){
-    if(v.vid==null)return '';
-    var s=suggestionFor(v,allVisits,declinedSet());
-    if(!s||s.o.last>v.last)return '';  // show the hint once, on the newer parking
+    var s=v.vid&&suggs[v.vid];
+    if(!s)return '';
     return '<div class="sugg"><span>Похоже на ту же парковку: <b>'+esc(placeOf(s.o)||'без места')+'</b> ('+plural(s.o.list.length,['машина','машины','машин'])+(s.d!=null?', около '+Math.max(5,Math.round(s.d/5)*5)+' м':'')+'). Объединить?</span>'+
       '<div class="acts"><button type="button" class="btn small primary" data-vact="merge" data-with="'+s.o.vid+'">Объединить</button><button type="button" class="btn small" data-vact="decline" data-with="'+s.o.vid+'">Нет, это разные</button></div></div>';
   }
@@ -1082,7 +1347,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(list.every(function(x){return x.status==='ok'}))return 'ok';
     return 'new';
   }
-  function fmtTime(iso){return new Date(iso).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
+  function fmtTime(iso){return F.t.format(new Date(iso))}
   function isOpenV(v){return v.key===openV||v.list.some(function(r){return r.id===openId})}
   function visitHTML(v,counts){
     var open=isOpenV(v),st=domStatus(v.list),f=v.list[0],n=v.list.length,d=new Date(f.date);
@@ -1091,7 +1356,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     var t1=fmtTime(f.date),t2=fmtTime(v.list[n-1].date),yr=d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'';
     var allEx=v.list.every(function(x){return x.example});
     var h='<div class="visit '+st+(open?' open':'')+'" data-key="'+v.key+'"><button type="button" class="vhead" data-vact="toggle" aria-expanded="'+open+'">'+
-      '<span class="dblk '+st+'"><i>'+d.toLocaleDateString('ru-RU',{weekday:'short'})+'</i><b>'+d.getDate()+'</b><span>'+d.toLocaleDateString('ru-RU',{month:'short'}).replace('.','')+'</span></span>'+
+      '<span class="dblk '+st+'"><i>'+F.wd.format(d)+'</i><b>'+d.getDate()+'</b><span>'+F.mon.format(d).replace('.','')+'</span></span>'+
       '<span class="vmain"><span class="vplace">'+esc(placeOf(v)||'Место не указано')+(allEx?'<span class="tag">пример</span>':'')+'</span>'+
       '<span class="vsum"><b>'+plural(n,['машина','машины','машин'])+'</b> · '+parts.join(', ')+'</span>'+
       '<span class="vsum">'+t1+(t2!==t1?'–'+t2:'')+yr+'</span>'+
@@ -1123,7 +1388,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       h+='<div class="edit">'+
         '<label for="pn-'+r.id+'">Госномер<input type="text" id="pn-'+r.id+'" class="plateEdit" data-f="plate" value="'+esc(r.plate||'')+'" placeholder="А123ВС77" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12"></label>'+
         moveHTML(r,v)+
-        '<div><label for="pl-'+r.id+'">Место</label><div class="inline" style="margin-top:5px"><input type="text" id="pl-'+r.id+'" data-f="place" list="placesDl" value="'+esc(r.place||'')+'" placeholder="Где стояла машина"><button type="button" class="btn small" data-act="geo">На карте</button></div>'+
+        '<div><label for="pl-'+r.id+'">Место</label><div class="inline" style="margin-top:5px"><input type="text" id="pl-'+r.id+'" data-f="place" data-ac="1" autocomplete="off" value="'+esc(r.place||'')+'" placeholder="Где стояла машина"><button type="button" class="btn small" data-act="geo">На карте</button></div>'+
         (r.geo?'<p class="geo" style="margin-top:5px">'+geoHTML(r.geo)+'</p>':'')+'</div>'+
         '<label for="nt-'+r.id+'">Заметка<textarea id="nt-'+r.id+'" data-f="note" placeholder="Что важно запомнить">'+esc(r.note||'')+'</textarea></label>'+
         '<label for="dt-'+r.id+'">Дата и время<input type="datetime-local" id="dt-'+r.id+'" data-f="date" value="'+toLocalInput(r.date)+'"></label>'+
@@ -1139,17 +1404,25 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(opts.indexOf(v)<0)opts.unshift(v);
     return '<label for="mv-'+r.id+'">Парковка<select id="mv-'+r.id+'" data-f="visit">'+opts.map(function(x){
       var d=new Date(x.list[0].date);
-      return '<option value="'+x.key+'"'+(x===v?' selected':'')+'>'+d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+' · '+esc((placeOf(x)||'без места').slice(0,40))+' · '+x.list.length+'</option>';
+      return '<option value="'+x.key+'"'+(x===v?' selected':'')+'>'+F.dm.format(d)+' · '+esc((placeOf(x)||'без места').slice(0,40))+' · '+x.list.length+'</option>';
     }).join('')+'<option value="__new">Отдельная новая парковка</option></select></label>';
   }
+  // long history is drawn in pages, so the list opens fast even with hundreds of parkings
+  var PAGE=30,shown=PAGE;
   function renderHist(){
     histDirty=false;
     var counts=countsMap(),rows=visibleRows(counts),list=$('list');
-    lastVisits=buildVisits(rows);allVisits=buildVisits(records.filter(function(r){return !r.example}));
+    lastVisits=buildVisits(rows);
+    var real=records.filter(function(r){return !r.example});
+    allVisits=filter==='all'&&!query.trim()&&real.length===rows.length?lastVisits:buildVisits(real);
+    suggs=computeSuggestions(allVisits);
     var nv=rows.filter(function(r){return r.status==='violator'}).length;
     $('hsum').textContent=rows.length?(plural(lastVisits.length,['парковка','парковки','парковок'])+' · '+plural(rows.length,['машина','машины','машин'])+(nv?' · '+nv+' нет в реестре':'')):'';
     if(!rows.length){list.innerHTML='<div class="empty">'+(query.trim()?'Ничего не найдено.':records.length?'В этом фильтре пусто.':'Пока ни одной проверки. Откройте вкладку «Проверка».')+'</div>';return}
-    list.innerHTML=lastVisits.map(function(v){return visitHTML(v,counts)}).join('');
+    for(var i=shown;i<lastVisits.length;i++)if(isOpenV(lastVisits[i])){shown=Math.ceil((i+1)/PAGE)*PAGE;break}
+    var vis=lastVisits.slice(0,shown),rest=lastVisits.length-vis.length;
+    list.innerHTML=vis.map(function(v){return visitHTML(v,counts)}).join('')+
+      (rest>0?'<button type="button" class="btn" id="moreV">Показать ещё ('+Math.min(rest,PAGE)+' из '+rest+')</button>':'');
   }
   function scrollVisit(key){
     setTimeout(function(){var el=document.querySelector('.visit[data-key="'+key+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},40);
@@ -1159,10 +1432,12 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(c){c.setAttribute('aria-pressed',c.dataset.f===f?'true':'false')});
   }
   Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){
-    b.addEventListener('click',function(){setFilter(b.dataset.f);renderHist()});
+    b.addEventListener('click',function(){setFilter(b.dataset.f);shown=PAGE;renderHist()});
   });
-  $('search').addEventListener('input',function(){query=this.value;renderHist()});
+  var searchT=null;
+  $('search').addEventListener('input',function(){var v=this.value;clearTimeout(searchT);searchT=setTimeout(function(){query=v;shown=PAGE;renderHist()},200)});
   $('list').addEventListener('click',function(e){
+    if(e.target.closest('#moreV')){shown+=PAGE;renderHist();return}
     var vt=e.target.closest('[data-vact]');
     if(vt){
       var vel=vt.closest('.visit'),key=vel.dataset.key,v=lastVisits.filter(function(x){return x.key===key})[0],a=vt.dataset.vact;
@@ -1207,7 +1482,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(a2==='del'){confirmId=id;renderHist();return}
     if(a2==='del-no'){confirmId=null;renderHist();return}
     if(a2==='del-yes'){
-      ['car','shot'].forEach(function(s){imgDel(id+':'+s).catch(function(){});delete imgCache[id+':'+s]});
+      ['car','shot'].forEach(function(s){imgDel(id+':'+s).catch(function(){});cacheDrop(id+':'+s)});
       records=records.filter(function(x){return x.id!==id});confirmId=null;openId=null;editId=null;
       save();render();toast('Запись удалена');
     }
@@ -1251,17 +1526,22 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     el.classList.toggle('err',days>=7);mt.classList.toggle('alert',days>=7);
   }
   function buildBackup(list){
-    var real=(list||records).filter(function(r){return !r.example}),keys=[];
+    var real=(list||records).filter(function(r){return !r.example}),keys=[],T={type:'application/json'};
     real.forEach(function(r){['car','shot'].forEach(function(s){if(r[s])keys.push(r.id+':'+s)})});
-    return Promise.all(keys.map(function(k){return imgCache[k]?Promise.resolve(imgCache[k]):imgGet(k)})).then(function(vals){
-      var imgs={};keys.forEach(function(k,i){if(vals[i])imgs[k]=vals[i]});
-      return new Blob([JSON.stringify({app:'fgis-fri',v:1,saved:new Date().toISOString(),records:real,images:imgs,places:list?[]:loadPlaces()})],{type:'application/json'});
+    var out=new Blob(['{"app":"fgis-fri","v":1,"saved":'+JSON.stringify(new Date().toISOString())+',"records":'+JSON.stringify(real)+',"places":'+JSON.stringify(list?[]:loadPlaces())+',"images":{'],T),first=true;
+    var chain=Promise.resolve();
+    keys.forEach(function(k){
+      chain=chain.then(function(){return getBlob(k)}).then(function(b){
+        if(!b)return;
+        return blobToDataUrl(b).then(function(d){out=new Blob([out,(first?'':',')+JSON.stringify(k)+':'+JSON.stringify(d)],T);first=false});
+      });
     });
+    return chain.then(function(){return new Blob([out,'}}'],T)});
   }
   function bkName(){var d=new Date();return 'proverka-kopiya-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.json'}
   function fmtSize(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(b/1024))+' КБ'}
   function downloadBlob(blob,name,msg){
-    if(NATIVE){blobB64(blob).then(function(b){AndroidApp.save(name,blob.type||'application/octet-stream',b);toast(msg,4000)},function(){toast('Не удалось сохранить файл')});return}
+    if(NATIVE){nativeFile(blob,name,'save').then(function(ok){toast(ok?msg:'Не удалось сохранить файл',4000)});return}
     var a=document.createElement('a'),url=URL.createObjectURL(blob);
     a.href=url;a.download=name;document.body.appendChild(a);a.click();
     setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url)},4000);
@@ -1271,7 +1551,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function sendRecords(list,name){
     toast('Собираю файл…',6000);
     buildBackup(list).then(function(blob){
-      if(NATIVE){return blobB64(blob).then(function(b){AndroidApp.share(name,'application/json',b)})}
+      if(NATIVE){return nativeFile(blob,name,'share').then(function(ok){if(!ok)toast('Не удалось отправить файл.')})}
       if(shareType&&navigator.share){
         var file=new File([blob],name,{type:shareType});
         return navigator.share({files:[file],title:'Проверка авто'}).catch(function(e){if(e&&e.name==='AbortError')return;downloadBlob(blob,name,'Файл сохранён в загрузки ('+fmtSize(blob.size)+'). Отправьте его вручную.')});
@@ -1316,7 +1596,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   if(shareType||NATIVE)$('bkShare').hidden=false;
   $('bkShare').addEventListener('click',function(){
     if(!records.some(function(r){return !r.example})){toast('Пока нечего отправлять');return}
-    if(NATIVE){buildBackup().then(function(blob){return blobB64(blob)}).then(function(b){AndroidApp.share(bkName(),'application/json',b);markBackup()}).catch(function(){toast('Не удалось отправить копию.')});return}
+    if(NATIVE){toast('Собираю копию…',6000);buildBackup().then(function(blob){return nativeFile(blob,bkName(),'share')}).then(function(ok){if(ok)markBackup();else toast('Не удалось отправить копию.')},function(){toast('Не удалось отправить копию.')});return}
     buildBackup().then(function(blob){
       var file=new File([blob],bkName(),{type:shareType});
       return navigator.share({files:[file],title:'Копия проверок'}).then(markBackup);
@@ -1329,7 +1609,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     rd.onload=function(){
       var d;try{d=JSON.parse(rd.result)}catch(e){toast('Это не файл копии.');return}
       if(!d||d.app!=='fgis-fri'||!Array.isArray(d.records)){toast('Это не файл копии из этого приложения.');return}
-      var added=0,skipped=0,jobs=[];
+      var added=0,skipped=0,puts=[],marks=[];
       if(Array.isArray(d.places)){
         var pl=loadPlaces();
         d.places.forEach(function(p){if(p&&p.name&&!pl.some(function(x){return normPlace(x.name)===normPlace(p.name)}))pl.push({name:String(p.name),geo:p.geo||null})});
@@ -1340,16 +1620,18 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         var ex=byId(r.id);
         ['car','shot'].forEach(function(s){
           var k=r.id+':'+s,img=d.images&&d.images[k];
-          if(img&&(!ex||!ex[s]))jobs.push(imgPut(k,img).then(function(){imgCache[k]=img;if(ex)ex[s]=true}));
+          if(typeof img!=='string'||(ex&&ex[s]))return;
+          try{puts.push([k,dataUrlToBlob(img)]);if(ex)marks.push([ex,s])}catch(e){}
         });
         if(ex){skipped++;return}
         if(!STATUS[r.status])r.status='new';
         if(isNaN(new Date(r.date).getTime()))r.date=new Date().toISOString();
         delete r.example;records.push(r);added++;
       });
-      Promise.all(jobs).then(function(){return true},function(){toast('Часть фото не поместилась в память телефона.',4000);return false}).then(function(){
+      d=null;
+      imgPutMany(puts).then(function(){marks.forEach(function(m){m[0][m[1]]=true})},function(){toast('Часть фото не поместилась в память телефона.',4000)}).then(function(){
         records=records.filter(function(x){return !x.example});
-        save();render();
+        assignVids();save();render();
         toast(added||skipped?'Добавлено записей: '+added+(skipped?'. Уже были: '+skipped:''):'В файле нет записей.',4000);
       });
     };
@@ -1360,7 +1642,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     var p1=navigator.storage.persisted?navigator.storage.persisted():Promise.resolve(false);
     var p2=navigator.storage.estimate?navigator.storage.estimate():Promise.resolve(null);
     Promise.all([p1,p2]).then(function(v){
-      var t='Защита браузера от автоудаления: '+(v[0]?'включена':'не включена');
+      var t=NATIVE?'Записи хранятся в приложении':'Защита браузера от автоудаления: '+(v[0]?'включена':'не включена');
       if(v[1]&&v[1].usage!=null)t+=' · занято '+fmtSize(v[1].usage);
       el.textContent=t;
     }).catch(function(){});
@@ -1379,7 +1661,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('mapall').hidden)closeAll()});
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-open]');if(!b)return;
-    var id=b.dataset.open;closeAll();setFilter('all');query='';$('search').value='';
+    var id=b.dataset.open;closeAll();setFilter('all');query='';$('search').value='';shown=PAGE;
     openId=id;openV=null;editId=null;confirmId=null;showTab('hist');render();
     setTimeout(function(){var el=document.querySelector('.crow[data-id="'+id+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},60);
   });
@@ -1438,6 +1720,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     try{if(window.AndroidApp&&AndroidApp.isDark)document.documentElement.setAttribute('data-theme',AndroidApp.isDark()?'dark':'light')}catch(e){}
   }
   window.__theme=applyTheme;applyTheme();
+  if(NATIVE)$('storeNote').textContent='Записи хранятся только в этом приложении на этом телефоне. Если удалить приложение или потерять телефон, они пропадут, поэтому иногда сохраняйте копию.';
   load();assignVids();renderTpls();blocks=[newBlock()];curK=blocks[0].k;renderBlocks();render();tryPersist();
   // Сервис-воркер нужен только для установки приложения (APK/значок). Он ничего не кэширует.
   try{
@@ -1447,6 +1730,11 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
+
+
+
+
 
 
 
