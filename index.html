@@ -370,6 +370,9 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     </details>
     <footer class="hint">
       <p id="storeNote">Записи хранятся только в этом браузере на этом телефоне. Если очистить данные браузера или потерять телефон, они пропадут, поэтому иногда сохраняйте копию.</p>
+      <p>Приложение сделано частными лицами и не связано с Госуслугами, ФГИС ФРИ и другими государственными органами. Проверка выполняется на официальном сайте.</p>
+      <p><a href="privacy.html" target="_blank" rel="noopener">Политика конфиденциальности</a></p>
+      <p id="aboutApp"></p>
       <p>Официальная страница проверки: <a href="https://www.gosuslugi.ru/invalidam/check-transport" target="_blank" rel="noopener">gosuslugi.ru/invalidam/check-transport</a></p>
     </footer>
   </section>
@@ -409,7 +412,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   var SLOT={car:'Фото машины',shot:'Скриншот проверки'};
   var TILE={car:'Фото машины',shot:'Скриншот'};
   var SIZE={car:[1000,0.65],shot:[1500,0.72]};
-  var GOS='https://www.gosuslugi.ru/invalidam/check-transport';
+  var GOS='https://www.gosuslugi.ru/invalidam/check-transport',PAGE_VER='2026-10-23b';
   var $=function(id){return document.getElementById(id)};
   var records=[],filter='all',openId=null,openV=null,editId=null,confirmId=null,query='';
   var imgCache={},pending={},newGeo=null,autoPlace=null,tab='check',histDirty=true,lastVisits=[];
@@ -1044,7 +1047,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(!vw)return;var v=vw,blob=blobOf(v.scope,v.slot);if(!blob)return;
     toast('Читаю номер…',8000);
     recognizePlate(blob).then(function(res){
-      if(!res){toast('Номер на фото не нашёлся.',3000);return}
+      if(!res){toast(ocrFailText(),5000);return}
       var b=v.scope.indexOf('b:')===0?blockBy(v.scope.slice(2)):null,r=b?null:byId(v.scope);
       if(b&&!norm(b.plate)){closeViewer();offerPlate(b,res);return}
       if(r&&!r.plate){r.plate=res.plate;save();render();toast('Номер с фото: '+res.plate+'. Проверьте его.',4000);return}
@@ -1102,18 +1105,27 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
   var OCR_OK=NATIVE&&typeof AndroidApp.ocr==='function'&&typeof AndroidApp.fileStart==='function';
   var ocrSeq=0,ocrWait={};
-  window.__ocr=function(id,lines){var cb=ocrWait[id];delete ocrWait[id];if(cb)cb(lines)};
+  window.__ocr=function(id,lines,err){var cb=ocrWait[id];delete ocrWait[id];if(cb)cb(lines,err)};
+  var ocrLast={lines:null,err:''};
+  // result: {plate,cost} or null; ocrLast keeps what was read, for the message
   function recognizePlate(blob){
-    if(!OCR_OK)return Promise.resolve(null);
+    ocrLast={lines:null,err:''};
+    if(!OCR_OK){ocrLast.err='нет в этой версии';return Promise.resolve(null)}
     return nativeUpload(blob,'ocr.jpg').then(function(fid){
-      if(!fid)return null;
+      if(!fid){ocrLast.err='не передалось фото';return null}
       return new Promise(function(res){
-        var req='o'+(++ocrSeq);ocrWait[req]=res;
-        setTimeout(function(){if(ocrWait[req]){delete ocrWait[req];res(null)}},20000);
-        var ok=false;try{ok=AndroidApp.ocr(fid,req)}catch(e){}
-        if(!ok){delete ocrWait[req];res(null)}
+        var req='o'+(++ocrSeq);
+        ocrWait[req]=function(lines,err){ocrLast.lines=lines;ocrLast.err=err||'';res(lines)};
+        setTimeout(function(){if(ocrWait[req]){delete ocrWait[req];ocrLast.err='не ответило за 20 с';res(null)}},20000);
+        var ok=false;try{ok=AndroidApp.ocr(fid,req)}catch(e){ocrLast.err=String(e.message||e)}
+        if(!ok){delete ocrWait[req];if(!ocrLast.err)ocrLast.err='не запустилось';res(null)}
       });
-    }).then(plateFromLines,function(){return null});
+    }).then(plateFromLines,function(){ocrLast.err='ошибка';return null});
+  }
+  function ocrFailText(){
+    if(ocrLast.err)return 'Распознавание не сработало: '+ocrLast.err+'.';
+    var t=(ocrLast.lines||[]).map(function(l){return l.t}).join(' ').replace(/\s+/g,' ').trim();
+    return t?'На фото прочитано «'+(t.length>60?t.slice(0,60)+'…':t)+'», но номера там нет. Снимите номер ближе.':'На фото не нашлось текста. Снимите номер ближе и ровнее.';
   }
   function shrink(file,max,q){
     var url=URL.createObjectURL(file);
@@ -1138,9 +1150,9 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
   function autoPlate(b,file){
     if(!OCR_OK)return;
-    shrink(file,1600,0.85).then(recognizePlate).then(function(res){
-      if(res)offerPlate(b,res);else toast('Номер на фото не нашёлся. Впишите его сами.',3000);
-    },function(){});
+    shrink(file,2400,0.9).then(recognizePlate).then(function(res){
+      if(res)offerPlate(b,res);else toast(ocrFailText(),5000);
+    },function(){toast('Фото не открылось для распознавания.',3000)});
   }
 
   // ---------- voice: say the plate ----------
@@ -2183,7 +2195,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     }).catch(function(e){
       gdDirty=true;
       if(/need|auth|popup/.test(e.message)){gdToken=null;gd.needLogin=true;gdSave()}
-      if(manual)toast('Не удалось выгрузить в Google Диск. '+(/need|auth/.test(e.message)?'Войдите заново.':'Попробуйте позже.'),4000);
+      if(manual)toast('Не удалось выгрузить в Google Диск. '+(/need|auth/.test(e.message)?'Войдите заново.':/http 403/.test(e.message)?'Похоже, в Google Cloud не включён Google Drive API.':'Попробуйте позже ('+e.message+').'),6000);
       return false;
     }).then(function(ok){gdBusy=false;gdRender();return ok});
   }
@@ -2214,10 +2226,19 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       gd={on:true,wifi:false};gdSave();
       return gdFetch(API.replace('/files','/about')+'?fields=user(emailAddress)').then(function(r){return r.json()}).then(function(j){gd.email=j.user&&j.user.emailAddress||'';gdSave()},function(){});
     }).then(function(){gdRender();toast('Google Диск подключён. Выгружаю…',3000);return gdSync(true)})
-    .catch(function(e){toast(/net/.test(e.message)?'Нет связи с Google. Проверьте интернет.':'Вход не выполнен.',3500)});
+    .catch(function(e){toast(gdWhy(e.message),7000)});
+  }
+  // plain words for Google's error codes
+  function gdWhy(m){
+    m=String(m||'');
+    if(/net/.test(m))return 'Нет связи с Google. Проверьте интернет.';
+    if(/\b10\b|DEVELOPER/i.test(m))return 'Вход не выполнен: Google не узнал приложение (код 10). В Google Cloud нужен ключ «Android» с пакетом ru.proverka.avto и отпечатком SHA-1 из инструкции.';
+    if(/\b16\b|cancel/i.test(m)&&!/\b10\b/.test(m))return 'Вход отменён.';
+    if(/access_denied|\b403\b/.test(m))return 'Google не дал доступ: проверьте, что приложение в Google Cloud опубликовано и включён Google Drive API. ('+m+')';
+    return 'Вход не выполнен: '+m;
   }
   $('gdBtn').addEventListener('click',gdConnect);
-  $('gdLogin').addEventListener('click',function(){gdToken=null;gdAuth(true).then(function(){gd.needLogin=false;gdSave();gdRender();gdSync(true)},function(){toast('Вход не выполнен.')})});
+  $('gdLogin').addEventListener('click',function(){gdToken=null;gdAuth(true).then(function(){gd.needLogin=false;gdSave();gdRender();gdSync(true)},function(e){toast(gdWhy(e.message),7000)})});
   $('gdNow').addEventListener('click',function(){gdSync(true)});
   $('gdWifi').addEventListener('change',function(){if(gd){gd.wifi=this.checked;gdSave();gdRender()}});
   $('gdRestore').addEventListener('click',function(){
@@ -2300,6 +2321,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     var p=themePref(),t=p==='light'||p==='dark'?p:null,root=document.documentElement;
     try{if(!t&&window.AndroidApp&&AndroidApp.isDark)t=AndroidApp.isDark()?'dark':'light'}catch(e){}
     if(t)root.setAttribute('data-theme',t);else root.removeAttribute('data-theme');
+    try{if(NATIVE&&AndroidApp.setBars)AndroidApp.setBars(t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches)}catch(e){}
     Array.prototype.forEach.call(document.querySelectorAll('#themeSeg button'),function(b){b.setAttribute('aria-pressed',b.dataset.th===p?'true':'false')});
   }
   $('themeSeg').addEventListener('click',function(e){
@@ -2308,6 +2330,10 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     applyTheme();
   });
   window.__theme=applyTheme;applyTheme();
+  (function(){
+    var v='';try{if(NATIVE&&AndroidApp.version)v=AndroidApp.version()}catch(e){}
+    $('aboutApp').textContent='Версия страницы: '+PAGE_VER+(NATIVE?' · приложение: '+(v||'старше 1.7'):' · в браузере')+' · номер по фото: '+(OCR_OK?'есть':'нет')+' · голос: '+(VOICE_OK?'есть':'нет')+' · Google Диск: '+(GD_OK?'есть':'нет');
+  })();
   if(NATIVE)$('storeNote').textContent='Записи хранятся только в этом приложении на этом телефоне. Если удалить приложение или потерять телефон, они пропадут, поэтому иногда сохраняйте копию.';
   load();assignVids();renderTpls();blocks=[newBlock()];curK=blocks[0].k;renderBlocks();render();tryPersist();
   // Сервис-воркер нужен только для установки приложения (APK/значок). Он ничего не кэширует.
@@ -2318,6 +2344,8 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
+
 
 
 
