@@ -148,6 +148,8 @@ details.how ol{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:col
 .acs{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ach{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 12px 5px;background:var(--bg)}
 .acwait{padding:10px 12px;white-space:normal}
+#themeSeg button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.mic{font-size:20px;padding:6px 12px;min-width:50px}
 .ctab.plus{border-style:dashed;color:var(--accent);background:transparent}
 /* history */
 .hbar{display:flex;flex-direction:column;gap:8px}
@@ -309,6 +311,23 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
 
   <section class="pane" id="tab-more" hidden>
     <header class="top"><h1>Ещё</h1></header>
+    <div class="card" id="gdCard" hidden>
+      <h2>Google Диск</h2>
+      <div id="gdIn">
+        <p class="hint">Войдите в свой Google-аккаунт, и копия всех записей с фото и таблица с графиками будут сами сохраняться в ваш Google Диск, в папку «Проверка авто». Приложение видит только свои файлы.</p>
+        <button type="button" class="btn primary" id="gdBtn" style="width:100%;margin-top:10px">Войти через Google</button>
+      </div>
+      <div id="gdOn" hidden>
+        <p class="hint" id="gdState"></p>
+        <button type="button" class="btn primary" id="gdLogin" hidden style="width:100%;margin:10px 0">Войти заново</button>
+        <div class="row" style="margin-top:10px">
+          <button type="button" class="btn" id="gdNow">Выгрузить сейчас</button>
+          <button type="button" class="btn" id="gdRestore">Восстановить с Диска</button>
+        </div>
+        <label class="chk" style="margin-top:10px"><input type="checkbox" id="gdWifi"> Выгружать только по Wi-Fi</label>
+        <button type="button" class="btn small ghost danger" id="gdOff" style="margin-top:6px">Отключить</button>
+      </div>
+    </div>
     <div class="card">
       <h2>Копия данных</h2>
       <p class="hint" id="bkInfo"></p>
@@ -319,8 +338,18 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       <label class="btn" for="bkFile">Загрузить копию</label>
       <input type="file" class="vh" id="bkFile">
       <p class="hint">Копия включает все записи и фото одним файлом. При загрузке записи добавляются к текущим, ничего не стирается. Так можно перенести список на другой телефон или объединить со списком коллеги.</p>
-      <button type="button" class="btn" id="csvBtn">Скачать таблицу (CSV)</button>
       <p class="hint" id="bkStore"></p>
+    </div>
+    <div class="card">
+      <h2>Таблица с графиками</h2>
+      <p class="hint">Файл Excel: сводка с графиками, все записи и парковки. Открывается в Excel, Google Таблицах и WPS на любом телефоне и компьютере.</p>
+      <label for="xlPeriod">Период
+        <select id="xlPeriod"><option value="all">За всё время</option><option value="m0">Этот месяц</option><option value="m1">Прошлый месяц</option><option value="d30">Последние 30 дней</option><option value="y0">Этот год</option></select>
+      </label>
+      <div class="row">
+        <button type="button" class="btn" id="xlSave">Скачать таблицу</button>
+        <button type="button" class="btn" id="xlShare">Отправить таблицу</button>
+      </div>
     </div>
     <div class="card">
       <h2>Настройки</h2>
@@ -328,6 +357,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         <input type="text" id="authorInput" placeholder="Например: Витя" autocomplete="off">
       </label>
       <label class="chk"><input type="checkbox" id="stampChk" checked> Накладывать на фото машины дату, время и место</label>
+      <div class="seg" id="themeSeg" role="group" aria-label="Тема"><span class="sl">Тема:</span><button type="button" data-th="auto" aria-pressed="true">Как в системе</button><button type="button" data-th="light" aria-pressed="false">Светлая</button><button type="button" data-th="dark" aria-pressed="false">Тёмная</button></div>
     </div>
     <details class="how" id="how">
       <summary>Как получить скриншот проверки</summary>
@@ -364,7 +394,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
 <div class="viewer" id="viewer" hidden role="dialog" aria-label="Просмотр фото">
   <div class="vtop"><b id="vTitle"></b><button type="button" class="vx" id="vClose">Закрыть</button></div>
   <div class="vimg"><img id="viewerImg" alt=""></div>
-  <div class="vbar" id="vBar"><button type="button" class="vb" id="vDl">Скачать</button><label class="vb" for="viewerFile">Заменить</label><button type="button" class="vb del" id="vRm">Убрать</button></div>
+  <div class="vbar" id="vBar"><button type="button" class="vb" id="vOcr" hidden>Номер с фото</button><button type="button" class="vb" id="vDl">Скачать</button><label class="vb" for="viewerFile">Заменить</label><button type="button" class="vb del" id="vRm">Убрать</button></div>
   <div class="vbar" id="vSure" hidden><span>Убрать это фото?</span><button type="button" class="vb del" id="vYes">Убрать</button><button type="button" class="vb" id="vNo">Отмена</button></div>
   <input type="file" accept="image/*" class="vh" id="viewerFile" data-pick="1">
 </div>
@@ -450,7 +480,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
   var persistTried=false;
   function save(){
-    try{localStorage.setItem(KEY,JSON.stringify(records));if(!persistTried){persistTried=true;tryPersist()}return true}
+    try{localStorage.setItem(KEY,JSON.stringify(records));if(!persistTried){persistTried=true;tryPersist()}if(window.__gdDirty)window.__gdDirty();return true}
     catch(e){toast('Не удалось сохранить: память браузера заполнена.');return false}
   }
   function norm(v){
@@ -957,14 +987,18 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(typeof A.fileStart!=='function'){
       return blobB64(blob).then(function(b){return (mode==='share'?A.share(name,mime,b):A.save(name,mime,b))!==false},function(){return false});
     }
-    var CH=1572864,pos=0,id=A.fileStart(name);
-    if(!id)return Promise.resolve(false);
+    return nativeUpload(blob,name).then(function(id){return id?A.fileEnd(id,mime,mode):false});
+  }
+  // file -> Java in pieces; gives the id of the piece-file, or null
+  function nativeUpload(blob,name){
+    var A=window.AndroidApp,CH=1572864,pos=0,id=A.fileStart(name);
+    if(!id)return Promise.resolve(null);
     function next(){
-      if(pos>=blob.size)return A.fileEnd(id,mime,mode);
+      if(pos>=blob.size)return id;
       var part=blob.slice(pos,pos+CH);pos+=CH;
       return blobB64(part).then(function(b){if(!A.fileChunk(id,b))throw new Error('chunk');return next()});
     }
-    return Promise.resolve().then(next).catch(function(){return false});
+    return Promise.resolve().then(next).catch(function(){return null});
   }
   function photoName(scope,slot){
     var r=byId(scope),b=scope.indexOf('b:')===0?blockBy(scope.slice(2)):null;
@@ -978,6 +1012,10 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(t.id==='viewerFile'){if(!vw)return;scope=vw.scope;slot=vw.slot}
     else{var tl=t.closest('.tile');if(!tl)return;scope=tl.dataset.scope;slot=tl.dataset.slot}
     compress(f,slot).then(function(d){return setImg(scope,slot,d)},function(){toast('Это фото не открылось. Попробуйте другое.')});
+    if(slot==='car'&&OCR_OK){
+      var bb=scope.indexOf('b:')===0?blockBy(scope.slice(2)):blocks.filter(function(x){return x.rid===scope})[0];
+      if(bb&&!(bb.rid?(byId(bb.rid)||{}).plate:norm(bb.plate)))autoPlate(bb,f);
+    }
     if(t.id==='viewerFile')t.value='';
   });
   var vw=null;
@@ -985,6 +1023,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function openViewer(scope,slot){
     var s=srcOf(scope,slot);if(!s||s==='loading')return;
     vw={scope:scope,slot:slot};$('viewerImg').src=s;$('vTitle').textContent=SLOT[slot];
+    $('vOcr').hidden=!(OCR_OK&&slot==='car');
     vConfirm(false);$('viewer').hidden=false;document.body.classList.add('vopen');document.body.style.overflow='hidden';
   }
   function closeViewer(){
@@ -1001,9 +1040,169 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(b)downloadBlob(b,nm,'Фото сохранено в загрузки: '+nm);
   });
   $('vRm').addEventListener('click',function(){vConfirm(true)});
+  $('vOcr').addEventListener('click',function(){
+    if(!vw)return;var v=vw,blob=blobOf(v.scope,v.slot);if(!blob)return;
+    toast('Читаю номер…',8000);
+    recognizePlate(blob).then(function(res){
+      if(!res){toast('Номер на фото не нашёлся.',3000);return}
+      var b=v.scope.indexOf('b:')===0?blockBy(v.scope.slice(2)):null,r=b?null:byId(v.scope);
+      if(b&&!norm(b.plate)){closeViewer();offerPlate(b,res);return}
+      if(r&&!r.plate){r.plate=res.plate;save();render();toast('Номер с фото: '+res.plate+'. Проверьте его.',4000);return}
+      var cur=b?norm(b.plate):r&&r.plate;
+      toast('На фото: '+res.plate+(cur&&cur!==res.plate?' (в записи '+cur+')':''),5000);
+    });
+  });
   $('vNo').addEventListener('click',function(){vConfirm(false)});
   $('vYes').addEventListener('click',function(){if(!vw)return;var v=vw;closeViewer();removeImg(v.scope,v.slot)});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&vw)closeViewer()});
+
+  // ---------- plate from text (photo recognition, voice) ----------
+  var CYL='АВЕКМНОРСТУХ',LAL='ABEKMHOPCTYX';
+  var TO_L={'0':'O','8':'B','4':'A','7':'T','6':'B','3':'B','1':'T','9':'P'};
+  var TO_D={'O':'0','B':'8','A':'4','T':'7','E':'3','C':'0','H':'4','Y':'7','P':'9'};
+  // finds "L DDD LL DD(D)" in noisy text; a few look-alike mix-ups (0/O, 8/B…) are fixed by position
+  function plateParse(text){
+    var s='',t=String(text||'').toUpperCase(),i,j;
+    for(i=0;i<t.length;i++){var c=t.charAt(i),k=CYL.indexOf(c);if(k>=0)c=LAL.charAt(k);if(/[A-Z0-9]/.test(c))s+=c}
+    var best=null;
+    [9,8].forEach(function(n){
+      var pat='LDDDLLDD'+(n===9?'D':'');
+      for(i=0;i+n<=s.length;i++){
+        var w=s.substr(i,n),cost=0,out='';
+        if(n===9&&!/\d/.test(w.charAt(8)))continue;
+        for(j=0;j<n;j++){
+          var ch=w.charAt(j);
+          if(pat.charAt(j)==='L'){
+            if(LAL.indexOf(ch)>=0)out+=ch;else if(TO_L[ch]){out+=TO_L[ch];cost++}else{cost=99;break}
+          }else{
+            if(/\d/.test(ch))out+=ch;else if(TO_D[ch]){out+=TO_D[ch];cost++}else{cost=99;break}
+          }
+        }
+        if(cost>=99)continue;
+        if(!best||cost<best.cost)best={plate:norm(out),cost:cost};
+      }
+    });
+    return best;
+  }
+  // ML Kit gives lines with boxes: try each line, a line with its right neighbour (region), and everything
+  function plateFromLines(lines){
+    if(!lines||!lines.length)return null;
+    var c=[],best=null;
+    lines.forEach(function(l,i){
+      c.push(l.t);
+      lines.forEach(function(m,j){
+        if(i===j||l.x==null||m.x==null)return;
+        var ov=Math.min(l.y+l.h,m.y+m.h)-Math.max(l.y,m.y);
+        if(m.x>=l.x+l.w*0.5&&ov>0.3*Math.min(l.h,m.h)&&m.x-(l.x+l.w)<l.h*3)c.push(l.t+' '+m.t);
+      });
+    });
+    c.push(lines.map(function(l){return l.t}).join(' '));
+    c.forEach(function(t){var p=plateParse(t);if(p&&(!best||p.cost<best.cost||(p.cost===best.cost&&p.plate.length>best.plate.length)))best=p});
+    return best;
+  }
+  var OCR_OK=NATIVE&&typeof AndroidApp.ocr==='function'&&typeof AndroidApp.fileStart==='function';
+  var ocrSeq=0,ocrWait={};
+  window.__ocr=function(id,lines){var cb=ocrWait[id];delete ocrWait[id];if(cb)cb(lines)};
+  function recognizePlate(blob){
+    if(!OCR_OK)return Promise.resolve(null);
+    return nativeUpload(blob,'ocr.jpg').then(function(fid){
+      if(!fid)return null;
+      return new Promise(function(res){
+        var req='o'+(++ocrSeq);ocrWait[req]=res;
+        setTimeout(function(){if(ocrWait[req]){delete ocrWait[req];res(null)}},20000);
+        var ok=false;try{ok=AndroidApp.ocr(fid,req)}catch(e){}
+        if(!ok){delete ocrWait[req];res(null)}
+      });
+    }).then(plateFromLines,function(){return null});
+  }
+  function shrink(file,max,q){
+    var url=URL.createObjectURL(file);
+    return loadImage(url).then(function(img){
+      URL.revokeObjectURL(url);
+      var w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,max/Math.max(w,h));
+      var c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      return canvasBlob(c,q);
+    },function(e){URL.revokeObjectURL(url);throw e});
+  }
+  // put a recognised plate into an empty plate field of a car card
+  function offerPlate(b,res){
+    var el=blockEl(b.k);if(!el||!res)return;
+    var inp=el.querySelector('input.plateEdit'),note=el.querySelector('[data-el=ocr]');
+    if(!inp||inp.value.trim())return;
+    inp.value=res.plate;
+    if(note){note.textContent=res.cost?'Номер прочитан с фото не очень уверенно. Сверьте с фото.':'Номер прочитан с фото. Сверьте, прежде чем проверять.';note.hidden=false}
+    if(b.rid){inp.dispatchEvent(new Event('change',{bubbles:true}))}
+    else{b.plate=res.plate;updateBlockPlate(b);renderCTabs()}
+    toast('Номер с фото: '+res.plate+'. Проверьте его.',3500);
+  }
+  function autoPlate(b,file){
+    if(!OCR_OK)return;
+    shrink(file,1600,0.85).then(recognizePlate).then(function(res){
+      if(res)offerPlate(b,res);else toast('Номер на фото не нашёлся. Впишите его сами.',3000);
+    },function(){});
+  }
+
+  // ---------- voice: say the plate ----------
+  var NUMW={'ноль':0,'нуль':0,'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10,'одиннадцать':11,'двенадцать':12,'тринадцать':13,'четырнадцать':14,'пятнадцать':15,'шестнадцать':16,'семнадцать':17,'восемнадцать':18,'девятнадцать':19,'двадцать':20,'тридцать':30,'сорок':40,'пятьдесят':50,'шестьдесят':60,'семьдесят':70,'восемьдесят':80,'девяносто':90,'сто':100,'двести':200,'триста':300,'четыреста':400,'пятьсот':500,'шестьсот':600,'семьсот':700,'восемьсот':800,'девятьсот':900};
+  var LETW={'а':'А','в':'В','вэ':'В','ве':'В','е':'Е','э':'Е','к':'К','ка':'К','м':'М','эм':'М','н':'Н','эн':'Н','о':'О','р':'Р','эр':'Р','с':'С','эс':'С','т':'Т','тэ':'Т','те':'Т','у':'У','х':'Х','ха':'Х','икс':'Х'};
+  function rank(v){return v>=100?3:v>=20?2:v>=10?1.5:1}
+  // "а сто двадцать три вэ эс семьдесят семь" -> А123ВС77; "семь семь" -> 77
+  function spokenPlate(text){
+    var toks=String(text||'').toLowerCase().replace(/ё/g,'е').replace(/[,.;:!?]/g,' ').split(/[\s\-]+/),out='',g=null;
+    function flush(){if(g){out+=String(g.v);g=null}}
+    toks.forEach(function(t){
+      if(!t)return;
+      if(/^\d+$/.test(t)){flush();out+=t;return}
+      if(NUMW.hasOwnProperty(t)){
+        var v=NUMW[t],r=rank(v);
+        if(g&&r<g.r&&g.r!==1.5&&!(g.r===2&&r!==1)){g.v+=v;g.r=r}else{flush();g={v:v,r:r}}
+        return;
+      }
+      flush();
+      if(LETW[t]){out+=LETW[t];return}
+      if(/^(номер|госномер|регион|рус|rus|раша|россия|машина|буква|буквы|цифры)$/.test(t))return;
+      var n=norm(t);
+      if(n&&/^[АВЕКМНОРСТУХ0-9]+$/.test(n)&&(/\d/.test(n)||n.length<=3))out+=n;
+    });
+    flush();
+    return norm(out);
+  }
+  function bestSpoken(list){
+    var first='';
+    for(var i=0;i<(list||[]).length;i++){
+      var p=spokenPlate(list[i]);if(RE.test(p))return p;
+      var q=plateParse(p);if(q&&!q.cost)return q.plate;
+      if(!first&&p)first=p;
+    }
+    return first;
+  }
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var VOICE_OK=(NATIVE&&typeof AndroidApp.listen==='function')||!!SR,voiceCb=null;
+  function micBtn(){return VOICE_OK?'<button type="button" class="btn small mic" data-mic="1" aria-label="Сказать номер голосом">🎤</button>':''}
+  window.__speech=function(list){var cb=voiceCb;voiceCb=null;if(cb)cb(list||[])};
+  function listen(cb){
+    voiceCb=cb;
+    if(NATIVE&&typeof AndroidApp.listen==='function'){if(!AndroidApp.listen()){voiceCb=null;cb([])}return}
+    try{
+      var r=new SR();r.lang='ru-RU';r.maxAlternatives=5;r.interimResults=false;
+      r.onresult=function(e){var a=[],res=e.results[0];for(var i=0;i<res.length;i++)a.push(res[i].transcript);window.__speech(a)};
+      r.onerror=function(){window.__speech([])};
+      r.onend=function(){setTimeout(function(){if(voiceCb===cb)window.__speech([])},300)};
+      r.start();toast('Говорите номер…',4000);
+    }catch(e){voiceCb=null;cb([])}
+  }
+  document.addEventListener('click',function(e){
+    var m=e.target.closest('[data-mic]');if(!m)return;
+    var inp=m.parentNode.querySelector('input');if(!inp)return;
+    listen(function(list){
+      var p=bestSpoken(list);
+      if(!p){toast(list.length?'Не разобрал номер: «'+list[0]+'». Попробуйте ещё раз.':'Голос не распознан. Попробуйте ещё раз.',3500);return}
+      inp.value=p;
+      inp.dispatchEvent(new Event(inp.dataset.bf==='rplate'||inp.dataset.f==='plate'?'change':'input',{bubbles:true}));
+      toast(RE.test(p)?'Номер: '+p:'Услышал: '+p+'. Проверьте номер.',3000);
+    });
+  });
 
   // ---------- check tab: several cars on one parking ----------
   function newBlock(){return {k:'k'+(++keySeq),plate:'',badge:'unknown',img:{car:null,shot:null},rid:null,when:null}}
@@ -1012,7 +1211,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
   function plateBox(r){
     return r.plate?'<div class="preview">'+plateHTML(r.plate,'m')+'</div>'
-      :'<label>Госномер<input type="text" class="plateEdit" data-bf="rplate" value="" placeholder="А123ВС77" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12"></label>';
+      :'<label>Госномер</label><div class="inline"><input type="text" class="plateEdit" data-bf="rplate" value="" placeholder="А123ВС77" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" aria-label="Госномер">'+micBtn()+'</div><p class="hint" data-el="ocr" hidden></p>';
   }
   function carHTML(b,i){
     var r=b.rid&&byId(b.rid);
@@ -1027,7 +1226,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         '<a class="btn small ghost" data-bact="again" href="'+GOS+'" target="_blank" rel="noopener">Проверить ещё раз</a></div></div>';
     }
     return '<div class="car" data-k="'+b.k+'"><div class="carhead"><b>Машина '+(i+1)+'</b>'+(blocks.length>1?'<button type="button" class="btn small ghost danger" data-bact="rm">Убрать</button>':'')+'</div>'+
-      '<label>Госномер<input type="text" class="plateEdit" data-bf="plate" value="'+esc(b.plate)+'" placeholder="А123ВС77" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12"></label>'+
+      '<label>Госномер</label><div class="inline"><input type="text" class="plateEdit" data-bf="plate" value="'+esc(b.plate)+'" placeholder="А123ВС77" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" aria-label="Госномер">'+micBtn()+'</div><p class="hint" data-el="ocr" hidden></p>'+
       '<div class="preview" data-el="prev"></div><p class="hint" data-el="hint"></p><div class="repeat" data-el="rep" hidden></div>'+
       '<div class="seg" data-el="badge">'+badgeHTML(b.badge)+'</div>'+
       tilesHTML('b:'+b.k)+
@@ -1217,7 +1416,8 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         var last=blocks[blocks.length-1],key=null;
         if(emptyBlock(last)){key=last.k;blocks[blocks.length-1]=nb}else blocks.push(nb);
         showTab('check');render();mountBlock(nb,key);
-        setTimeout(function(){scrollToBlock(nb,true)},40);
+        setTimeout(function(){scrollToBlock(nb,!OCR_OK)},40);
+        autoPlate(nb,f);
         toast(v.g?'Сохранено. Впишите номер.':'Сохранено без места. Впишите номер.',3500);
       });
     }).catch(function(){toast('Не удалось сохранить фото. Попробуйте ещё раз.')}).then(function(){
@@ -1231,7 +1431,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     ['check','hist','more'].forEach(function(k){$('tab-'+k).hidden=(k!==n)});
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){b.setAttribute('aria-selected',b.dataset.tab===n?'true':'false')});
     if(n==='hist'&&histDirty)renderHist();
-    if(n==='more'){bkInfo();persistInfo()}
+    if(n==='more'){bkInfo();persistInfo();if(typeof gdRender==='function')gdRender()}
     window.scrollTo(0,0);
   }
   Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){
@@ -1365,7 +1565,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     h+=suggHTML(v);
     if(open){
       h+='<div class="cars">'+v.list.map(function(r){return carRowHTML(r,counts,n===1,v)}).join('')+'</div>';
-      if(n>1)h+='<div class="vfoot"><button type="button" class="btn small" data-vact="place">Изменить место для всех</button><button type="button" class="btn small" data-vact="send">Отправить парковку</button></div>';
+      if(n>1)h+='<div class="vfoot"><button type="button" class="btn small" data-vact="place">Изменить место для всех</button><button type="button" class="btn small" data-vact="send">Отправить парковку</button>'+(v.list.some(function(x){return x.car||x.shot})?'<button type="button" class="btn small" data-vact="photos">Скачать все фото</button>':'')+'</div>';
     }
     return h+'</div>';
   }
@@ -1395,7 +1595,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         '<label for="by-'+r.id+'">Кто снял<input type="text" id="by-'+r.id+'" data-f="by" value="'+esc(r.by||'')+'" placeholder="Имя" autocomplete="off"></label></div>';
     }
     if(confirmId===r.id)h+='<div class="confirm">Удалить запись вместе с фото? <button type="button" class="btn small danger" data-act="del-yes">Удалить</button><button type="button" class="btn small ghost" data-act="del-no">Отмена</button></div>';
-    else h+='<div class="acts"><button type="button" class="btn small tg" data-act="edit" aria-pressed="'+ed+'">Изменить</button><button type="button" class="btn small tg" data-act="pub" aria-pressed="'+(!!r.pub)+'">'+(r.pub?'В блоге':'Опубликовано?')+'</button><button type="button" class="btn small" data-act="send">Отправить</button><button type="button" class="btn small ghost danger" data-act="del">Удалить</button></div>';
+    else h+='<div class="acts"><button type="button" class="btn small tg" data-act="edit" aria-pressed="'+ed+'">Изменить</button><button type="button" class="btn small tg" data-act="pub" aria-pressed="'+(!!r.pub)+'">'+(r.pub?'В блоге':'Опубликовано?')+'</button><button type="button" class="btn small" data-act="send">Отправить</button>'+((r.car||r.shot)?'<button type="button" class="btn small" data-act="photos">Скачать фото</button>':'')+'<button type="button" class="btn small ghost danger" data-act="del">Удалить</button></div>';
     return h+'</div></div>';
   }
   function moveHTML(r,v){
@@ -1460,6 +1660,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         var dc=declinedSet(),other=allVisits.filter(function(x){return x.vid===vt.dataset.with})[0];
         if(other){dc[pairKey(v,other)]=1;try{localStorage.setItem(DK,JSON.stringify(dc))}catch(e){}}
         renderHist();
+      }else if(a==='photos'){downloadPhotos(v.list)
       }else if(a==='send'){sendRecords(v.list,'proverka-parkovka-'+dayStamp()+'.json')}
       return;
     }
@@ -1474,6 +1675,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     }
     if(a2==='recheck'){if(!r.plate){e.preventDefault();toast('Сначала впишите номер');var pi=row.querySelector('[data-f=plate]');if(pi)pi.focus();return}copy(r.plate,'Номер '+r.plate+' скопирован. Вставьте его на сайте.');return}
     if(a2==='badge'){r.badge=t.dataset.b;save();render();return}
+    if(a2==='photos'){downloadPhotos([r]);return}
     if(a2==='send'){sendRecords([r],'proverka-'+(r.plate||'zapis')+'-'+dayStamp()+'.json');return}
     if(a2==='pub'){r.pub=!r.pub;save();render();toast(r.pub?'Отмечено: опубликовано в блоге':'Отметка снята');return}
     if(a2==='edit'){editId=editId===id?null:id;renderHist();return}
@@ -1540,12 +1742,30 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }
   function bkName(){var d=new Date();return 'proverka-kopiya-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.json'}
   function fmtSize(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(b/1024))+' КБ'}
+  // photos in the APK go to the gallery (Pictures/Проверка авто), other files to Downloads
   function downloadBlob(blob,name,msg){
-    if(NATIVE){nativeFile(blob,name,'save').then(function(ok){toast(ok?msg:'Не удалось сохранить файл',4000)});return}
+    var photo=/^image\//.test(blob.type||'');
+    if(NATIVE)return nativeFile(blob,name,photo?'photo':'save').then(function(ok){if(msg||!ok)toast(ok?msg:'Не удалось сохранить файл',4000);return ok});
     var a=document.createElement('a'),url=URL.createObjectURL(blob);
     a.href=url;a.download=name;document.body.appendChild(a);a.click();
     setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url)},4000);
-    toast(msg,4000);
+    if(msg)toast(msg,4000);
+    return Promise.resolve(true);
+  }
+  // all photos of several records, one after another
+  function downloadPhotos(list){
+    var jobs=[];
+    list.forEach(function(r){if(!r.example)['car','shot'].forEach(function(s){if(r[s])jobs.push([r,s])})});
+    if(!jobs.length){toast('Здесь нет фото');return}
+    toast('Сохраняю фото: '+jobs.length+'…',6000);
+    var ok=0,chain=Promise.resolve();
+    jobs.forEach(function(j){
+      chain=chain.then(function(){return getBlob(j[0].id+':'+j[1])}).then(function(b){
+        if(!b)return;
+        return downloadBlob(b,photoName(j[0].id,j[1]),null).then(function(x){if(x)ok++;return new Promise(function(res){setTimeout(res,NATIVE?50:450)})});
+      });
+    });
+    chain.then(function(){toast(ok?'Сохранено фото: '+ok+(NATIVE?' (Галерея → «Проверка авто»)':' (в загрузках)'):'Не удалось сохранить фото',4500)});
   }
   function dayStamp(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
   function sendRecords(list,name){
@@ -1562,20 +1782,229 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function author(){return ($('authorInput').value||'').trim()}
   try{$('authorInput').value=localStorage.getItem('fgis-fri-author')||''}catch(e){}
   $('authorInput').addEventListener('input',function(){try{localStorage.setItem('fgis-fri-author',this.value.trim())}catch(e){}});
-  $('csvBtn').addEventListener('click',function(){
-    var real=byDateAsc(records.filter(function(x){return !x.example}));
-    if(!real.length){toast('Пока нечего выгружать');return}
-    var vm={};buildVisits(real).sort(function(a,b){return a.list[0].date<b.list[0].date?-1:1}).forEach(function(v,i){v.list.forEach(function(r){vm[r.id]='П'+(i+1)})});
-    function q(v){v=String(v==null?'':v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
-    var head=['Дата','Время','Номер','Место','Широта','Долгота','Результат','Знак «Инвалид»','Парковка','В блоге','Кто снял','Заметка'];
-    var rows=real.map(function(r){
-      var d=new Date(r.date),g='';
-      g=vm[r.id]||'';
-      return [d.toLocaleDateString('ru-RU'),d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),r.plate?pretty(r.plate):'',r.place||'',
-        r.geo?r.geo.lat.toFixed(6).replace('.',','):'',r.geo?r.geo.lon.toFixed(6).replace('.',','):'',STATUS[r.status],BADGE[r.badge||'unknown'],g,r.pub?'да':'',r.by||'',r.note||''].map(q).join(';');
+  // ---------- Excel export: .xlsx with charts, built here without libraries ----------
+  var CRCT=null;
+  function crc32(u){
+    if(!CRCT){CRCT=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CRCT[n]=c>>>0}}
+    var x=0xFFFFFFFF;for(var i=0;i<u.length;i++)x=CRCT[(x^u[i])&255]^(x>>>8);return (x^0xFFFFFFFF)>>>0;
+  }
+  function zipBlob(files,type){
+    var enc=new TextEncoder(),parts=[],central=[],off=0,csize=0;
+    files.forEach(function(f){
+      var name=enc.encode(f.name),data=enc.encode(f.data),crc=crc32(data);
+      var h=new DataView(new ArrayBuffer(30));
+      h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);
+      h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);
+      parts.push(h.buffer,name,data);
+      var c=new DataView(new ArrayBuffer(46));
+      c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);
+      c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);
+      central.push(c.buffer,name);csize+=46+name.length;
+      off+=30+name.length+data.length;
     });
-    var blob=new Blob(['\ufeff'+[head.map(q).join(';')].concat(rows).join('\r\n')],{type:'text/csv;charset=utf-8'});
-    downloadBlob(blob,'proverka-tablica-'+dayStamp()+'.csv','Таблица сохранена в загрузки ('+real.length+' строк)');
+    var e=new DataView(new ArrayBuffer(22));
+    e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);
+    return new Blob(parts.concat(central,[e.buffer]),{type:type});
+  }
+  function xe(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'')}
+  function colName(i){var s='';i++;while(i){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s}
+  function xlDate(d){return (Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),d.getHours(),d.getMinutes())/864e5)+25569}
+  // style ids (see styles below)
+  var XS={title:2,sub:10,head:3,date:4,time:5,bad:6,good:7,wait:8,bold:1,kpi:9,wrap:11,link:12,sect:13};
+  function cellXML(ref,c){
+    if(c==null||c==='')return '';
+    if(typeof c!=='object')c={v:c};
+    var s=c.s?' s="'+c.s+'"':'';
+    if(c.f)return '<c r="'+ref+'"'+s+' t="str"><f>'+xe(c.f)+'</f><v>'+xe(c.v)+'</v></c>';
+    if(typeof c.v==='number')return '<c r="'+ref+'"'+s+'><v>'+c.v+'</v></c>';
+    return '<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+xe(c.v)+'</t></is></c>';
+  }
+  function sheetXML(rows,o){
+    o=o||{};
+    var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+    x+='<sheetViews><sheetView workbookViewId="0"'+(o.first?' tabSelected="1"':'')+'>'+(o.freeze?'<pane ySplit="'+o.freeze+'" topLeftCell="A'+(o.freeze+1)+'" activePane="bottomLeft" state="frozen"/>':'')+'</sheetView></sheetViews>';
+    x+='<sheetFormatPr defaultRowHeight="15"/>';
+    if(o.cols)x+='<cols>'+o.cols.map(function(w,i){return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>'}).join('')+'</cols>';
+    x+='<sheetData>';
+    rows.forEach(function(r,ri){
+      if(!r)return;
+      var cells=r.map(function(c,ci){return cellXML(colName(ci)+(ri+1),c)}).join('');
+      x+='<row r="'+(ri+1)+'"'+(r.ht?' ht="'+r.ht+'" customHeight="1"':'')+'>'+cells+'</row>';
+    });
+    x+='</sheetData>';
+    if(o.filter)x+='<autoFilter ref="'+o.filter+'"/>';
+    if(o.merge&&o.merge.length)x+='<mergeCells count="'+o.merge.length+'">'+o.merge.map(function(m){return '<mergeCell ref="'+m+'"/>'}).join('')+'</mergeCells>';
+    x+='<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>';
+    if(o.drawing)x+='<drawing r:id="rId1"/>';
+    return x+'</worksheet>';
+  }
+  var XCOL={violator:'C0352B',ok:'1D7A46',new:'B8901E'};
+  function chartXML(o){
+    // o: {title, dir:'col'|'bar', stacked, cats:{ref,vals}, series:[{name,nameRef,ref,vals,color}], labels, legend}
+    var cat='<c:cat><c:strRef><c:f>'+xe(o.cats.ref)+'</c:f><c:strCache><c:ptCount val="'+o.cats.vals.length+'"/>'+o.cats.vals.map(function(v,i){return '<c:pt idx="'+i+'"><c:v>'+xe(v)+'</c:v></c:pt>'}).join('')+'</c:strCache></c:strRef></c:cat>';
+    var ser=o.series.map(function(s,i){
+      return '<c:ser><c:idx val="'+i+'"/><c:order val="'+i+'"/><c:tx><c:strRef><c:f>'+xe(s.nameRef)+'</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>'+xe(s.name)+'</c:v></c:pt></c:strCache></c:strRef></c:tx>'+
+        '<c:spPr><a:solidFill><a:srgbClr val="'+s.color+'"/></a:solidFill><a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr><c:invertIfNegative val="0"/>'+
+        (o.labels?'<c:dLbls><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr><c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="900"><a:solidFill><a:srgbClr val="333333"/></a:solidFill></a:defRPr></a:pPr><a:endParaRPr lang="ru-RU"/></a:p></c:txPr><c:dLblPos val="outEnd"/><c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/></c:dLbls>':'')+
+        cat+'<c:val><c:numRef><c:f>'+xe(s.ref)+'</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="'+s.vals.length+'"/>'+s.vals.map(function(v,j){return '<c:pt idx="'+j+'"><c:v>'+v+'</c:v></c:pt>'}).join('')+'</c:numCache></c:numRef></c:val></c:ser>';
+    }).join('');
+    var txt=function(sz,col){return '<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="'+sz+'"><a:solidFill><a:srgbClr val="'+col+'"/></a:solidFill></a:defRPr></a:pPr><a:endParaRPr lang="ru-RU"/></a:p></c:txPr>'};
+    var bar=o.dir==='bar';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart>'+
+      '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1200" b="1"/></a:pPr><a:r><a:rPr lang="ru-RU" sz="1200" b="1"><a:solidFill><a:srgbClr val="1A1A1A"/></a:solidFill></a:rPr><a:t>'+xe(o.title)+'</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>'+
+      '<c:plotArea><c:layout/><c:barChart><c:barDir val="'+(bar?'bar':'col')+'"/><c:grouping val="'+(o.stacked?'stacked':'clustered')+'"/><c:varyColors val="0"/>'+ser+
+      '<c:gapWidth val="'+(bar?40:60)+'"/>'+(o.stacked?'<c:overlap val="100"/>':'')+'<c:axId val="5001"/><c:axId val="5002"/></c:barChart>'+
+      '<c:catAx><c:axId val="5001"/><c:scaling><c:orientation val="'+(bar?'maxMin':'minMax')+'"/></c:scaling><c:delete val="0"/><c:axPos val="'+(bar?'l':'b')+'"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="BFC5CF"/></a:solidFill></a:ln></c:spPr>'+txt(900,'555555')+'<c:crossAx val="5002"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>'+
+      '<c:valAx><c:axId val="5002"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="'+(bar?1:0)+'"/><c:axPos val="'+(bar?'b':'l')+'"/>'+(bar?'':'<c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="E6E9EE"/></a:solidFill></a:ln></c:spPr></c:majorGridlines>')+'<c:numFmt formatCode="0" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>'+txt(900,'777777')+'<c:crossAx val="5001"/><c:crosses val="'+(bar?'max':'autoZero')+'"/><c:crossBetween val="between"/></c:valAx></c:plotArea>'+
+      (o.legend?'<c:legend><c:legendPos val="b"/><c:overlay val="0"/>'+txt(900,'333333')+'</c:legend>':'')+
+      '<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr></c:chartSpace>';
+  }
+  function anchorXML(id,c1,r1,c2,r2){
+    return '<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>'+c1+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+r1+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>'+c2+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+r2+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>'+
+      '<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="'+(id+1)+'" name="Chart '+id+'"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId'+id+'"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor>';
+  }
+  var XL_STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    '<numFmts count="2"><numFmt numFmtId="164" formatCode="dd.mm.yyyy"/><numFmt numFmtId="165" formatCode="hh:mm"/></numFmts>'+
+    '<fonts count="6"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="16"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/><family val="2"/></font><font><sz val="10"/><color rgb="FF5B6578"/><name val="Calibri"/><family val="2"/></font><font><u/><sz val="11"/><color rgb="FF1F5BC4"/><name val="Calibri"/><family val="2"/></font></fonts>'+
+    '<fills count="7"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1F5BC4"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFBE6E4"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE0F2E7"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF7EED2"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEEF1F6"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'+
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+    '<cellXfs count="14">'+
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="3" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>'+
+      '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left"/></xf>'+
+      '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left"/></xf>'+
+      '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1"/>'+
+      '<xf numFmtId="0" fontId="0" fillId="4" borderId="0" xfId="0" applyFill="1"/>'+
+      '<xf numFmtId="0" fontId="0" fillId="5" borderId="0" xfId="0" applyFill="1"/>'+
+      '<xf numFmtId="0" fontId="2" fillId="6" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="left"/></xf>'+
+      '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+      '<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="1" fillId="6" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'+
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  function periodRange(p){
+    var n=new Date(),y=n.getFullYear(),m=n.getMonth();
+    if(p==='m0')return [new Date(y,m,1),null,'этот месяц'];
+    if(p==='m1')return [new Date(y,m-1,1),new Date(y,m,1),'прошлый месяц'];
+    if(p==='d30')return [new Date(Date.now()-30*864e5),null,'последние 30 дней'];
+    if(p==='y0')return [new Date(y,0,1),null,y+' год'];
+    return [null,null,'всё время'];
+  }
+  function buildXlsx(period){
+    var pr=periodRange(period),from=pr[0],to=pr[1];
+    var list=byDateAsc(records.filter(function(r){
+      if(r.example)return false;var d=new Date(r.date);
+      return (!from||d>=from)&&(!to||d<to);
+    }));
+    if(!list.length)return null;
+    var SN='Сводка',Q="'"+SN+"'!";
+    var visits=buildVisits(list).sort(function(a,b){return a.list[0].date<b.list[0].date?-1:1}),vno={};
+    visits.forEach(function(v,i){v.list.forEach(function(r){vno[r.id]='П'+(i+1)})});
+    var cnt={violator:0,ok:0,new:0};list.forEach(function(r){cnt[STATUS[r.status]?r.status:'new']++});
+    var counts={};list.forEach(function(r){if(r.plate)counts[r.plate]=(counts[r.plate]||0)+1});
+    var reps=Object.keys(counts).filter(function(p){return counts[p]>1}).sort(function(a,b){return counts[b]-counts[a]});
+    var d0=new Date(list[0].date),d1=new Date(list[list.length-1].date),byDay=(d1-d0)<62*864e5;
+    // time buckets
+    var buckets=[],bmap={},cur=byDay?new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()):new Date(d0.getFullYear(),d0.getMonth(),1);
+    while(cur<=d1){
+      var k=byDay?F.dm.format(cur):F.mon.format(cur).replace('.','')+' '+cur.getFullYear();
+      bmap[k]={k:k,violator:0,ok:0,new:0};buckets.push(bmap[k]);
+      cur=byDay?new Date(cur.getFullYear(),cur.getMonth(),cur.getDate()+1):new Date(cur.getFullYear(),cur.getMonth()+1,1);
+    }
+    list.forEach(function(r){var d=new Date(r.date),k=byDay?F.dm.format(d):F.mon.format(d).replace('.','')+' '+d.getFullYear();if(bmap[k])bmap[k][STATUS[r.status]?r.status:'new']++});
+    if(byDay&&buckets.length>31)buckets=buckets.filter(function(b){return b.violator+b.ok+b.new});
+    // places
+    var pl={};list.forEach(function(r){var p=(r.place||'Без места').trim(),k=pkey(p)||'—';var o=pl[k]||(pl[k]={name:p,v:0,n:0});o.n++;if(r.status==='violator')o.v++});
+    var places=Object.keys(pl).map(function(k){return pl[k]}).sort(function(a,b){return b.v-a.v||b.n-a.n}).slice(0,10);
+    // ---- sheet 1: summary ----
+    var S=[],row=function(r){S.push(r);return S.length};
+    row([{v:'Проверка авто в ФГИС ФРИ',s:XS.title}]);
+    row([{v:'Период: '+pr[2]+' ('+F.dl.format(d0)+' — '+F.dl.format(d1)+'). Выгружено '+fmtDate(new Date().toISOString())+(author()?', '+author():''),s:XS.sub}]);
+    row(null);
+    row([{v:'Итого',s:XS.sect},{v:'',s:XS.sect}]);
+    [['Проверено машин',list.length,0],['Нет в реестре',cnt.violator,XS.bad],['Есть в реестре',cnt.ok,XS.good],['Не отмечено',cnt.new,XS.wait],['Парковок',visits.length,0],['Повторных номеров',reps.length,0],['Опубликовано в блоге',list.filter(function(r){return r.pub}).length,0]].forEach(function(k){
+      row([{v:k[0],s:k[2]||0},{v:k[1],s:XS.bold}]);
+    });
+    row(null);
+    var tStart=row([{v:byDay?'По дням':'По месяцам',s:XS.head},{v:'Нет в реестре',s:XS.head},{v:'В реестре',s:XS.head},{v:'Не отмечено',s:XS.head},{v:'Всего',s:XS.head}]);
+    buckets.forEach(function(b){row([b.k,b.violator,b.ok,b.new,b.violator+b.ok+b.new])});
+    var tEnd=S.length;
+    row(null);
+    var pStart=row([{v:'Место',s:XS.head},{v:'Нет в реестре',s:XS.head},{v:'Всего проверок',s:XS.head}]);
+    places.forEach(function(p){row([p.name,p.v,p.n])});
+    var pEnd=S.length;
+    if(reps.length){
+      row(null);
+      row([{v:'Повторные номера',s:XS.head},{v:'Раз',s:XS.head},{v:'Последний раз',s:XS.head},{v:'Места',s:XS.head}]);
+      reps.slice(0,50).forEach(function(p){
+        var rs=list.filter(function(r){return r.plate===p}),last=rs[rs.length-1];
+        var ps=[];rs.forEach(function(r){if(r.place&&ps.indexOf(r.place)<0)ps.push(r.place)});
+        row([pretty(p),counts[p],{v:xlDate(new Date(last.date)),s:XS.date},{v:ps.join('; '),s:XS.wrap}]);
+      });
+    }
+    var cats=buckets.map(function(b){return b.k});
+    var ch1=chartXML({title:(byDay?'Проверки по дням':'Проверки по месяцам'),stacked:true,legend:true,
+      cats:{ref:Q+'$A$'+(tStart+1)+':$A$'+tEnd,vals:cats},
+      series:[['violator','B','Нет в реестре'],['ok','C','В реестре'],['new','D','Не отмечено']].map(function(s){
+        return {name:s[2],nameRef:Q+'$'+s[1]+'$'+tStart,ref:Q+'$'+s[1]+'$'+(tStart+1)+':$'+s[1]+'$'+tEnd,vals:buckets.map(function(b){return b[s[0]]}),color:XCOL[s[0]]};
+      })});
+    var ch2=places.length?chartXML({title:'Где больше всего нарушителей',dir:'bar',labels:true,
+      cats:{ref:Q+'$A$'+(pStart+1)+':$A$'+pEnd,vals:places.map(function(p){return p.name.length>40?p.name.slice(0,39)+'…':p.name})},
+      series:[{name:'Нет в реестре',nameRef:Q+'$B$'+pStart,ref:Q+'$B$'+(pStart+1)+':$B$'+pEnd,vals:places.map(function(p){return p.v}),color:XCOL.violator}]}):null;
+    // ---- sheet 2: all records ----
+    var head=['Дата','Время','Номер','Место','Результат','Знак «Инвалид»','Парковка','В блоге','Кто снял','Заметка','Широта','Долгота','Карта'];
+    var R=[head.map(function(h){return {v:h,s:XS.head}})];
+    list.forEach(function(r){
+      var d=new Date(r.date),st=STATUS[r.status]?r.status:'new';
+      R.push([{v:xlDate(d),s:XS.date},{v:xlDate(d)%1,s:XS.time},r.plate?pretty(r.plate):'',r.place||'',{v:STATUS[st],s:st==='violator'?XS.bad:st==='ok'?XS.good:XS.wait},
+        BADGE[r.badge||'unknown'],vno[r.id]||'',r.pub?'да':'',r.by||'',r.note?{v:r.note,s:XS.wrap}:'',
+        r.geo?+r.geo.lat.toFixed(6):'',r.geo?+r.geo.lon.toFixed(6):'',r.geo?{f:'HYPERLINK("'+mapLink(r.geo)+'","открыть")',v:'открыть',s:XS.link}:'']);
+    });
+    // ---- sheet 3: parkings ----
+    var P=[['Парковка','Дата','Время','Место','Машин','Нет в реестре','В реестре','Не отмечено','Номера'].map(function(h){return {v:h,s:XS.head}})];
+    visits.forEach(function(v,i){
+      var f=new Date(v.list[0].date),c={violator:0,ok:0,new:0};v.list.forEach(function(r){c[STATUS[r.status]?r.status:'new']++});
+      P.push(['П'+(i+1),{v:xlDate(f),s:XS.date},{v:xlDate(f)%1,s:XS.time},placeOf(v)||'',v.list.length,c.violator,c.ok,c.new,{v:v.list.map(function(r){return r.plate?pretty(r.plate):'?'}).join(', '),s:XS.wrap}]);
+    });
+    var charts=[ch1].concat(ch2?[ch2]:[]);
+    var files=[
+      {name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+        [1,2,3].map(function(i){return '<Override PartName="/xl/worksheets/sheet'+i+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'}).join('')+
+        '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>'+
+        charts.map(function(_,i){return '<Override PartName="/xl/charts/chart'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>'}).join('')+'</Types>'},
+      {name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+      {name:'xl/workbook.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView activeTab="0"/></bookViews><sheets><sheet name="'+SN+'" sheetId="1" r:id="rId1"/><sheet name="Записи" sheetId="2" r:id="rId2"/><sheet name="Парковки" sheetId="3" r:id="rId3"/></sheets>'+
+        '<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="1" hidden="1">\'Записи\'!$A$1:$M$'+R.length+'</definedName></definedNames></workbook>'},
+      {name:'xl/_rels/workbook.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+[1,2,3].map(function(i){return '<Relationship Id="rId'+i+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+i+'.xml"/>'}).join('')+'<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+      {name:'xl/styles.xml',data:XL_STYLES},
+      {name:'xl/worksheets/sheet1.xml',data:sheetXML(S,{first:true,cols:[34,16,16,14,12],drawing:true})},
+      {name:'xl/worksheets/_rels/sheet1.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>'},
+      {name:'xl/worksheets/sheet2.xml',data:sheetXML(R,{freeze:1,cols:[11,7,13,32,15,16,9,8,12,30,10,10,10],filter:'A1:M'+R.length})},
+      {name:'xl/worksheets/sheet3.xml',data:sheetXML(P,{freeze:1,cols:[10,11,7,32,8,13,10,12,40]})},
+      {name:'xl/drawings/drawing1.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+        anchorXML(1,6,1,15,19)+(ch2?anchorXML(2,6,20,15,20+Math.max(10,places.length*2+4)):'')+'</xdr:wsDr>'},
+      {name:'xl/drawings/_rels/drawing1.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+charts.map(function(_,i){return '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart'+(i+1)+'.xml"/>'}).join('')+'</Relationships>'}
+    ];
+    charts.forEach(function(c,i){files.push({name:'xl/charts/chart'+(i+1)+'.xml',data:c})});
+    return {blob:zipBlob(files,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),n:list.length};
+  }
+  function xlName(){return 'proverka-tablica-'+dayStamp()+'.xlsx'}
+  $('xlSave').addEventListener('click',function(){
+    var x=buildXlsx($('xlPeriod').value);
+    if(!x){toast('За этот период записей нет');return}
+    downloadBlob(x.blob,xlName(),'Таблица сохранена в загрузки ('+x.n+' '+plural(x.n,['машина','машины','машин']).split(' ')[1]+')');
+  });
+  $('xlShare').addEventListener('click',function(){
+    var x=buildXlsx($('xlPeriod').value);
+    if(!x){toast('За этот период записей нет');return}
+    if(NATIVE){nativeFile(x.blob,xlName(),'share').then(function(ok){if(!ok)toast('Не удалось отправить таблицу.')});return}
+    var file=null;try{file=new File([x.blob],xlName(),{type:x.blob.type})}catch(e){}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:'Проверка авто — таблица'}).catch(function(e){if(!e||e.name!=='AbortError')downloadBlob(x.blob,xlName(),'Таблица сохранена в загрузки. Отправьте её вручную.')});
+    }else downloadBlob(x.blob,xlName(),'Таблица сохранена в загрузки. Отправьте её вручную.');
   });
   $('bkSave').addEventListener('click',function(){
     if(!records.some(function(r){return !r.example})){toast('Пока нечего сохранять');return}
@@ -1606,9 +2035,12 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     var f=this.files&&this.files[0];this.value='';if(!f)return;
     var rd=new FileReader();
     rd.onerror=function(){toast('Файл не прочитался.')};
-    rd.onload=function(){
-      var d;try{d=JSON.parse(rd.result)}catch(e){toast('Это не файл копии.');return}
-      if(!d||d.app!=='fgis-fri'||!Array.isArray(d.records)){toast('Это не файл копии из этого приложения.');return}
+    rd.onload=function(){importBackupText(rd.result)};
+    rd.readAsText(f);
+  });
+  function importBackupText(text){
+      var d;try{d=JSON.parse(text)}catch(e){toast('Это не файл копии.');return Promise.resolve(false)}
+      if(!d||d.app!=='fgis-fri'||!Array.isArray(d.records)){toast('Это не файл копии из этого приложения.');return Promise.resolve(false)}
       var added=0,skipped=0,puts=[],marks=[];
       if(Array.isArray(d.places)){
         var pl=loadPlaces();
@@ -1629,14 +2061,13 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         delete r.example;records.push(r);added++;
       });
       d=null;
-      imgPutMany(puts).then(function(){marks.forEach(function(m){m[0][m[1]]=true})},function(){toast('Часть фото не поместилась в память телефона.',4000)}).then(function(){
+      return imgPutMany(puts).then(function(){marks.forEach(function(m){m[0][m[1]]=true})},function(){toast('Часть фото не поместилась в память телефона.',4000)}).then(function(){
         records=records.filter(function(x){return !x.example});
         assignVids();save();render();
         toast(added||skipped?'Добавлено записей: '+added+(skipped?'. Уже были: '+skipped:''):'В файле нет записей.',4000);
+        return true;
       });
-    };
-    rd.readAsText(f);
-  });
+  }
   function persistInfo(){
     var el=$('bkStore');if(!el||!navigator.storage)return;
     var p1=navigator.storage.persisted?navigator.storage.persisted():Promise.resolve(false);
@@ -1654,6 +2085,154 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   // ---------- stamp setting ----------
   try{if(localStorage.getItem('fgis-fri-stamp')==='0')$('stampChk').checked=false}catch(e){}
   $('stampChk').addEventListener('change',function(){try{localStorage.setItem('fgis-fri-stamp',this.checked?'1':'0')}catch(e){}});
+
+  // ---------- Google Drive: own Google account, files only in the folder «Проверка авто» ----------
+  var GD_CLIENT='';  // Web client ID from Google Cloud (for the browser). The APK signs in by package + key, no ID needed.
+  var GD_SCOPE='https://www.googleapis.com/auth/drive.file',GD_FOLDER='Проверка авто',GD_BACKUP='Копия проверок.json',GD_XLSX='Таблица проверок.xlsx';
+  var GDK='fgis-fri-gdrive',gd=null,gdToken=null,gdExp=0,gdBusy=false,gdDirty=false,gdTimer=null,gdWaitAuth=null,gdTc=null;
+  function gdLoad(){try{gd=JSON.parse(localStorage.getItem(GDK)||'null')}catch(e){gd=null}if(gd&&!gd.on)gd=null}
+  function gdSave(){try{if(gd)localStorage.setItem(GDK,JSON.stringify(gd));else localStorage.removeItem(GDK)}catch(e){}}
+  var GD_NATIVE=NATIVE&&typeof AndroidApp.driveAuth==='function',GD_OK=GD_NATIVE||(!NATIVE&&!!GD_CLIENT);
+  // ---- token ----
+  window.__gauth=function(tok,err){var cb=gdWaitAuth;gdWaitAuth=null;if(tok){gdToken=tok;gdExp=Date.now()+50*6e4}if(cb)cb(tok,err)};
+  var gisP=null;
+  function loadGis(){
+    if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();
+    if(gisP)return gisP;
+    gisP=new Promise(function(res,rej){var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=function(){gisP=null;rej()};document.head.appendChild(s)});
+    return gisP;
+  }
+  function gdAuth(interactive){
+    if(gdToken&&Date.now()<gdExp)return Promise.resolve(gdToken);
+    return new Promise(function(res,rej){
+      if(GD_NATIVE){
+        gdWaitAuth=function(t,e){t?res(t):rej(new Error(e||'auth'))};
+        try{AndroidApp.driveAuth(!!interactive)}catch(e){gdWaitAuth=null;rej(e)}
+        return;
+      }
+      if(!interactive){rej(new Error('need'));return}
+      loadGis().then(function(){
+        if(!gdTc)gdTc=google.accounts.oauth2.initTokenClient({client_id:GD_CLIENT,scope:GD_SCOPE,callback:function(){}});
+        gdTc.callback=function(r){if(r&&r.access_token){gdToken=r.access_token;gdExp=Date.now()+((r.expires_in||3600)-300)*1000;res(gdToken)}else rej(new Error((r&&r.error)||'auth'))};
+        gdTc.error_callback=function(e){rej(new Error((e&&e.type)||'auth'))};
+        gdTc.requestAccessToken({prompt:gd?'':'consent',login_hint:gd&&gd.email||undefined});
+      },function(){rej(new Error('net'))});
+    });
+  }
+  // ---- Drive REST ----
+  function gdFetch(url,opt,retry){
+    opt=opt||{};
+    return gdAuth(false).catch(function(){return gdAuth(opt.interactive)}).then(function(tok){
+      opt.headers=opt.headers||{};opt.headers.Authorization='Bearer '+tok;
+      return fetch(url,opt);
+    }).then(function(r){
+      if(r.status===401&&!retry){gdToken=null;return gdFetch(url,opt,true)}
+      if(!r.ok)throw new Error('http '+r.status);
+      return r;
+    });
+  }
+  var API='https://www.googleapis.com/drive/v3/files',UP='https://www.googleapis.com/upload/drive/v3/files';
+  function gdFind(q){return gdFetch(API+'?spaces=drive&fields=files(id,name,modifiedTime,size)&q='+encodeURIComponent(q+' and trashed=false')).then(function(r){return r.json()}).then(function(j){return j.files||[]})}
+  function gdFolder(){
+    if(gd&&gd.folder)return Promise.resolve(gd.folder);
+    return gdFind("name='"+GD_FOLDER+"' and mimeType='application/vnd.google-apps.folder'").then(function(f){
+      if(f.length)return f[0].id;
+      return gdFetch(API+'?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:GD_FOLDER,mimeType:'application/vnd.google-apps.folder'})}).then(function(r){return r.json()}).then(function(j){return j.id});
+    }).then(function(id){if(gd){gd.folder=id;gdSave()}return id});
+  }
+  // one file name = one file on Drive; it is overwritten (Drive keeps old versions itself)
+  function gdPut(name,blob,key){
+    return gdFolder().then(function(folder){
+      var id=gd&&gd[key];
+      var start=id?gdFetch(UP+'/'+id+'?uploadType=resumable',{method:'PATCH',headers:{'Content-Type':'application/json; charset=UTF-8','X-Upload-Content-Type':blob.type},body:'{}'})
+        :gdFetch(UP+'?uploadType=resumable&fields=id',{method:'POST',headers:{'Content-Type':'application/json; charset=UTF-8','X-Upload-Content-Type':blob.type},body:JSON.stringify({name:name,parents:[folder]})});
+      return start.catch(function(e){
+        if(id&&/http 404/.test(e.message)){gd[key]=null;gdSave();return gdPut(name,blob,key).then(function(){return null})}
+        throw e;
+      }).then(function(r){
+        if(!r)return;
+        var loc=r.headers.get('Location');
+        return fetch(loc,{method:'PUT',headers:{'Content-Type':blob.type},body:blob}).then(function(x){if(!x.ok)throw new Error('http '+x.status);return x.json()}).then(function(j){if(gd&&j.id){gd[key]=j.id;gdSave()}});
+      });
+    });
+  }
+  function onWifiOk(){
+    if(!gd||!gd.wifi)return true;
+    var c=navigator.connection;
+    return !(c&&c.type&&c.type!=='wifi'&&c.type!=='ethernet');
+  }
+  function gdSync(manual){
+    if(!gd||gdBusy)return Promise.resolve(false);
+    if(!navigator.onLine){if(manual)toast('Нет интернета.');return Promise.resolve(false)}
+    if(!manual&&!onWifiOk()){gdStatus('Ждёт Wi-Fi: есть несохранённые изменения');return Promise.resolve(false)}
+    gdBusy=true;gdDirty=false;gdStatus('Выгружаю в Google Диск…');
+    // first time on this phone: take what is already on Drive and merge it in, so nothing there is overwritten
+    var first=!gd.backup?gdFolder().then(function(folder){return gdFind("name='"+GD_BACKUP+"' and '"+folder+"' in parents")}).then(function(f){
+      if(!f.length)return;
+      gd.backup=f[0].id;gdSave();
+      return gdFetch(API+'/'+f[0].id+'?alt=media').then(function(r){return r.text()}).then(importBackupText);
+    }):Promise.resolve();
+    return first.then(function(){return buildBackup()}).then(function(blob){return gdPut(GD_BACKUP,blob,'backup')}).then(function(){
+      var real=records.filter(function(r){return !r.example});
+      if(!real.length)return;
+      var x=buildXlsx('all');if(x)return gdPut(GD_XLSX,x.blob,'xlsx');
+    }).then(function(){
+      gd.last=new Date().toISOString();gdSave();markBackup();
+      if(manual)toast('Выгружено в Google Диск, папка «'+GD_FOLDER+'»',3500);
+      return true;
+    }).catch(function(e){
+      gdDirty=true;
+      if(/need|auth|popup/.test(e.message)){gdToken=null;gd.needLogin=true;gdSave()}
+      if(manual)toast('Не удалось выгрузить в Google Диск. '+(/need|auth/.test(e.message)?'Войдите заново.':'Попробуйте позже.'),4000);
+      return false;
+    }).then(function(ok){gdBusy=false;gdRender();return ok});
+  }
+  window.__gdDirty=function(){
+    if(!gd)return;gdDirty=true;clearTimeout(gdTimer);
+    gdTimer=setTimeout(function(){if(gdDirty)gdSync(false)},90000);
+  };
+  document.addEventListener('visibilitychange',function(){if(document.hidden&&gd&&gdDirty){clearTimeout(gdTimer);gdSync(false)}});
+  window.addEventListener('online',function(){if(gd&&gdDirty)gdSync(false)});
+  // ---- UI ----
+  function gdStatus(t){var el=$('gdState');if(el)el.textContent=t}
+  function gdRender(){
+    var card=$('gdCard');if(!card)return;
+    card.hidden=!GD_OK;if(!GD_OK)return;
+    $('gdIn').hidden=!!gd;$('gdOn').hidden=!gd;
+    if(!gd)return;
+    $('gdWifi').checked=!!gd.wifi;
+    var t=(gd.email?gd.email:'Google Диск подключён');
+    if(gd.needLogin)t+=' · нужно войти заново';
+    else if(gdBusy)t+=' · выгружаю…';
+    else if(gdDirty&&gd.wifi&&!onWifiOk())t+=' · ждёт Wi-Fi';
+    else if(gd.last)t+=' · выгружено '+fmtDate(gd.last);
+    gdStatus(t);
+    $('gdLogin').hidden=!gd.needLogin;
+  }
+  function gdConnect(){
+    gdAuth(true).then(function(){
+      gd={on:true,wifi:false};gdSave();
+      return gdFetch(API.replace('/files','/about')+'?fields=user(emailAddress)').then(function(r){return r.json()}).then(function(j){gd.email=j.user&&j.user.emailAddress||'';gdSave()},function(){});
+    }).then(function(){gdRender();toast('Google Диск подключён. Выгружаю…',3000);return gdSync(true)})
+    .catch(function(e){toast(/net/.test(e.message)?'Нет связи с Google. Проверьте интернет.':'Вход не выполнен.',3500)});
+  }
+  $('gdBtn').addEventListener('click',gdConnect);
+  $('gdLogin').addEventListener('click',function(){gdToken=null;gdAuth(true).then(function(){gd.needLogin=false;gdSave();gdRender();gdSync(true)},function(){toast('Вход не выполнен.')})});
+  $('gdNow').addEventListener('click',function(){gdSync(true)});
+  $('gdWifi').addEventListener('change',function(){if(gd){gd.wifi=this.checked;gdSave();gdRender()}});
+  $('gdRestore').addEventListener('click',function(){
+    toast('Ищу копию на Диске…',5000);
+    gdFolder().then(function(folder){return gdFind("name='"+GD_BACKUP+"' and '"+folder+"' in parents")}).then(function(f){
+      if(!f.length){toast('На Диске пока нет копии.');return}
+      return gdFetch(API+'/'+f[0].id+'?alt=media').then(function(r){return r.text()}).then(importBackupText);
+    }).catch(function(){toast('Не удалось взять копию с Диска.')});
+  });
+  $('gdOff').addEventListener('click',function(){
+    if(!confirm('Отключить Google Диск? Файлы на Диске останутся, записи на телефоне тоже.'))return;
+    if(gdToken)fetch('https://oauth2.googleapis.com/revoke?token='+encodeURIComponent(gdToken),{method:'POST'}).catch(function(){});
+    gd=null;gdToken=null;gdSave();gdRender();toast('Google Диск отключён');
+  });
+  gdLoad();gdRender();
   // ---------- all cases on the map ----------
   var map2=null,grp=null;
   function closeAll(){$('mapall').hidden=true;document.body.style.overflow=''}
@@ -1716,9 +2295,18 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(tab!=='check'){showTab('check');return true}
     return false;
   };
+  function themePref(){try{return localStorage.getItem('fgis-fri-theme')||'auto'}catch(e){return 'auto'}}
   function applyTheme(){
-    try{if(window.AndroidApp&&AndroidApp.isDark)document.documentElement.setAttribute('data-theme',AndroidApp.isDark()?'dark':'light')}catch(e){}
+    var p=themePref(),t=p==='light'||p==='dark'?p:null,root=document.documentElement;
+    try{if(!t&&window.AndroidApp&&AndroidApp.isDark)t=AndroidApp.isDark()?'dark':'light'}catch(e){}
+    if(t)root.setAttribute('data-theme',t);else root.removeAttribute('data-theme');
+    Array.prototype.forEach.call(document.querySelectorAll('#themeSeg button'),function(b){b.setAttribute('aria-pressed',b.dataset.th===p?'true':'false')});
   }
+  $('themeSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    try{localStorage.setItem('fgis-fri-theme',b.dataset.th)}catch(err){}
+    applyTheme();
+  });
   window.__theme=applyTheme;applyTheme();
   if(NATIVE)$('storeNote').textContent='Записи хранятся только в этом приложении на этом телефоне. Если удалить приложение или потерять телефон, они пропадут, поэтому иногда сохраняйте копию.';
   load();assignVids();renderTpls();blocks=[newBlock()];curK=blocks[0].k;renderBlocks();render();tryPersist();
@@ -1730,6 +2318,14 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
+
+
+
+
+
+
+
 
 
 
