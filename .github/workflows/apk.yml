@@ -34,7 +34,7 @@ jobs:
           fi
           echo "$SIDELOAD_KEYSTORE" | base64 -d > "$RUNNER_TEMP/sideload.jks"
           echo "SIDELOAD_KEYSTORE_FILE=$RUNNER_TEMP/sideload.jks" >> "$GITHUB_ENV"
-      - run: gradle -p android assembleRelease --no-daemon -PvCode=$((100 + VCODE))
+      - run: gradle -p android assembleRelease --no-daemon -PvCode=$((100 + VCODE)) -PvName=1.7.$VCODE
       - run: cp android/app/build/outputs/apk/release/app-release.apk Proverka-avto.apk
       - name: Check APK is signed with the sideload key
         run: |
@@ -51,7 +51,7 @@ jobs:
           UPLOAD_PASSWORD: ${{ secrets.UPLOAD_PASSWORD }}
         run: |
           echo "$UPLOAD_KEYSTORE" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          UPLOAD_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks" gradle -p android bundleRelease --no-daemon -Pupload -PvCode=$((100 + VCODE))
+          UPLOAD_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks" gradle -p android bundleRelease --no-daemon -Pupload -PvCode=$((100 + VCODE)) -PvName=1.7.$VCODE
           cp android/app/build/outputs/bundle/release/app-release.aab Proverka-avto-google-play.aab
           rm -f "$RUNNER_TEMP/upload.jks"
       - name: Remove keys from the runner
