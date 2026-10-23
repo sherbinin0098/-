@@ -133,6 +133,13 @@ details.how ol{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:col
 .ctab{flex:0 0 auto;font:inherit;font-size:14px;font-weight:600;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);border-radius:12px;padding:8px 14px;min-height:42px;cursor:pointer;white-space:nowrap}
 .ctab[aria-selected=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .ctab.st-violator{border-color:var(--bad)}.ctab.st-ok{border-color:var(--good)}.ctab.st-new.sv{border-color:var(--wait)}
+.sugg{margin:0 12px 12px;padding:10px 12px;border-radius:12px;background:var(--accent-soft);font-size:13.5px;display:flex;flex-direction:column;gap:8px}
+.sugg .acts .btn{flex:1 1 0}
+.tpls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tpls:empty{display:none}
+.tpl{font:inherit;font-size:13.5px;font-weight:600;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:7px 12px;min-height:36px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpl.x{border-color:var(--bad);color:var(--bad)}
+.tpl.act{border-style:dashed;color:var(--accent);background:transparent}
 .ctab.plus{border-style:dashed;color:var(--accent);background:transparent}
 /* history */
 .hbar{display:flex;flex-direction:column;gap:8px}
@@ -246,6 +253,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         <button type="button" class="btn small" id="geoBtn">На карте</button>
       </div>
       <p class="geo" id="geoInfo" hidden></p>
+      <div class="tpls" id="tpls"></div>
       <details class="more" id="moreD">
         <summary>Заметка и время</summary>
         <div class="fields">
@@ -370,7 +378,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   var records=[],filter='all',openId=null,openV=null,editId=null,confirmId=null,query='';
   var imgCache={},pending={},newGeo=null,autoPlace=null,tab='check',histDirty=true,lastVisits=[];
   var blocks=[],keySeq=0,curK=null,sessionVid=null;
-  function newVid(){return 'p'+Date.now()+Math.floor(Math.random()*900+100)}
+  var vidSeq=0;function newVid(){return 'p'+Date.now()+(++vidSeq)+Math.floor(Math.random()*900+100)}
   sessionVid=newVid();
 
   // ---------- image storage (IndexedDB) ----------
@@ -532,6 +540,33 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     cb({lat:c.lat,lon:c.lng,acc:null,manual:true},addr);
   });
 
+  // ---------- place templates ----------
+  var PK='fgis-fri-places',tplEdit=false;
+  function loadPlaces(){try{var v=JSON.parse(localStorage.getItem(PK)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}}
+  function savePlaces(l){try{localStorage.setItem(PK,JSON.stringify(l))}catch(e){toast('Не удалось сохранить место')}}
+  function renderTpls(){
+    var l=loadPlaces(),cur=$('placeInput').value.trim(),h='';
+    l.forEach(function(p,i){h+='<button type="button" class="tpl'+(tplEdit?' x':'')+'" data-tpl="'+i+'">'+(tplEdit?'× ':'')+esc(p.name)+'</button>'});
+    var have=cur&&l.some(function(p){return normPlace(p.name)===normPlace(cur)});
+    if(cur&&!have&&!tplEdit)h+='<button type="button" class="tpl act" data-tact="save">★ Запомнить это место</button>';
+    if(l.length)h+='<button type="button" class="tpl act" data-tact="edit">'+(tplEdit?'Готово':'Изменить')+'</button>';
+    $('tpls').innerHTML=h;
+  }
+  $('tpls').addEventListener('click',function(e){
+    var t=e.target.closest('button');if(!t)return;
+    var l=loadPlaces();
+    if(t.dataset.tact==='save'){
+      var name=$('placeInput').value.trim();
+      l.push({name:name,geo:newGeo||null});savePlaces(l);renderTpls();toast('Место запомнено');return;
+    }
+    if(t.dataset.tact==='edit'){tplEdit=!tplEdit;renderTpls();return}
+    var p=l[+t.dataset.tpl];if(!p)return;
+    if(tplEdit){l.splice(+t.dataset.tpl,1);savePlaces(l);renderTpls();return}
+    $('placeInput').value=p.name;autoPlace=null;newGeo=p.geo||null;
+    if(p.geo){$('geoInfo').innerHTML=geoHTML(p.geo);$('geoInfo').hidden=false}else $('geoInfo').hidden=true;
+    applySessionPlace();renderTpls();
+  });
+  $('placeInput').addEventListener('input',renderTpls);
   function applySessionPlace(){
     var p=$('placeInput').value.trim(),n=0;
     blocks.forEach(function(b){
@@ -551,6 +586,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       $('geoInfo').innerHTML=geoHTML(g);$('geoInfo').hidden=false;
       var had=blocks.some(function(b){return b.rid});
       if(had)applySessionPlace();else toast(addr?'Место отмечено':'Адрес не найден, точка сохранена');
+      renderTpls();
     });
   });
 
@@ -661,7 +697,13 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     imgDel(k).then(function(){},function(){});
     delete imgCache[k];r[slot]=false;if(slot==='car')delete r.photo;save();refreshTiles(scope);toast(SLOT[slot]+': убрано');
   }
+  var NATIVE=!!window.AndroidApp;
+  function blobB64(blob){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(String(fr.result).split(',')[1]||'')};fr.onerror=rej;fr.readAsDataURL(blob)})}
   function downloadData(dataUrl,name){
+    if(NATIVE){
+      var m=/^data:([^;,]+)[^,]*,(.*)$/.exec(dataUrl);
+      if(m){try{AndroidApp.save(name,m[1],m[2]);toast('Фото сохранено в загрузки: '+name,3500)}catch(e){toast('Не удалось сохранить фото')}return}
+    }
     function go(href,revoke){
       var a=document.createElement('a');a.href=href;a.download=name;document.body.appendChild(a);a.click();
       setTimeout(function(){document.body.removeChild(a);if(revoke)URL.revokeObjectURL(href)},4000);
@@ -806,7 +848,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function emptyBlock(b){return b&&!b.rid&&!b.plate&&!b.img.car&&!b.img.shot}
   function resetSession(){
     $('placeInput').value='';$('noteInput').value='';$('dateInput').value='';newGeo=null;autoPlace=null;$('geoInfo').hidden=true;
-    $('moreD').open=false;sessionVid=newVid();
+    $('moreD').open=false;sessionVid=newVid();renderTpls();
     blocks=[newBlock()];curK=blocks[0].k;renderBlocks();
   }
   function sessionRecord(plate,badge,when){
@@ -906,7 +948,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       if(pl.value.trim()){r.geo=newGeo||v.g}
       else{
         r.place=v.addr||'';r.autoPlace=v.addr||null;r.geo=v.g;
-        if(v.addr){pl.value=v.addr;autoPlace=v.addr}
+        if(v.addr){pl.value=v.addr;autoPlace=v.addr;renderTpls()}
         if(v.g){newGeo=v.g;$('geoInfo').innerHTML=geoHTML(v.g);$('geoInfo').hidden=false}
       }
       r.car=true;
@@ -996,9 +1038,44 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       if(!map[root]){map[root]={key:'v'+(r.vid||r.id),list:[]};out.push(map[root])}
       map[root].list.push(r);
     });
-    out.forEach(function(v){v.last=v.list[v.list.length-1].date});
+    out.forEach(function(v){v.last=v.list[v.list.length-1].date;v.vid=v.list[0].vid||null});
     return out.sort(function(a,b){return a.last<b.last?1:-1});
   }
+  // legacy records without a parking id: group once by the old day+place rule, then it is explicit
+  function assignVids(){
+    var ch=false;
+    buildVisits(records.filter(function(r){return !r.vid})).forEach(function(v){var id=newVid();v.list.forEach(function(r){r.vid=id});ch=true});
+    if(ch)save();
+  }
+  var DK='fgis-fri-nomerge';
+  function declinedSet(){try{return JSON.parse(localStorage.getItem(DK)||'{}')||{}}catch(e){return {}}}
+  function pairKey(a,b){return a.vid<b.vid?a.vid+'|'+b.vid:b.vid+'|'+a.vid}
+  function ms(iso){return new Date(iso).getTime()}
+  function suggestionFor(v,all,dec){
+    var best=null;
+    all.forEach(function(o){
+      if(o===v||!o.vid||!v.vid||o.vid===v.vid||dec[pairKey(v,o)])return;
+      if(dayKey(o.list[0].date)!==dayKey(v.list[0].date)&&dayKey(o.last)!==dayKey(v.list[0].date))return;
+      var s1=ms(v.list[0].date),e1=ms(v.last),s2=ms(o.list[0].date),e2=ms(o.last);
+      if(Math.max(0,s1-e2,s2-e1)>3*36e5)return;
+      var dmin=null,samePlace=false;
+      v.list.forEach(function(x){o.list.forEach(function(y){
+        if(x.geo&&y.geo){var d=dist(x.geo,y.geo);if(dmin==null||d<dmin)dmin=d}
+        if(normPlace(x.place)&&normPlace(x.place)===normPlace(y.place))samePlace=true;
+      })});
+      if(!(samePlace||(dmin!=null&&dmin<=150)))return;
+      if(!best||(dmin!=null&&(best.d==null||dmin<best.d)))best={o:o,d:dmin};
+    });
+    return best;
+  }
+  function suggHTML(v){
+    if(v.vid==null)return '';
+    var s=suggestionFor(v,allVisits,declinedSet());
+    if(!s||s.o.last>v.last)return '';  // show the hint once, on the newer parking
+    return '<div class="sugg"><span>Похоже на ту же парковку: <b>'+esc(placeOf(s.o)||'без места')+'</b> ('+plural(s.o.list.length,['машина','машины','машин'])+(s.d!=null?', около '+Math.max(5,Math.round(s.d/5)*5)+' м':'')+'). Объединить?</span>'+
+      '<div class="acts"><button type="button" class="btn small primary" data-vact="merge" data-with="'+s.o.vid+'">Объединить</button><button type="button" class="btn small" data-vact="decline" data-with="'+s.o.vid+'">Нет, это разные</button></div></div>';
+  }
+  var allVisits=[];
   function placeOf(v){for(var i=0;i<v.list.length;i++)if(v.list[i].place)return v.list[i].place;return ''}
   function domStatus(list){
     if(list.some(function(x){return x.status==='violator'}))return 'violator';
@@ -1020,6 +1097,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       '<span class="vsum">'+t1+(t2!==t1?'–'+t2:'')+yr+'</span>'+
       '<span class="vplates">'+v.list.slice(0,8).map(function(x){return '<span class="mp '+x.status+'">'+plateHTML(x.plate,'xs')+'</span>'}).join('')+(n>8?'<span class="more2">ещё '+(n-8)+'</span>':'')+'</span></span>'+
       '<span class="chev" aria-hidden="true">›</span></button>';
+    h+=suggHTML(v);
     if(open){
       h+='<div class="cars">'+v.list.map(function(r){return carRowHTML(r,counts,n===1,v)}).join('')+'</div>';
       if(n>1)h+='<div class="vfoot"><button type="button" class="btn small" data-vact="place">Изменить место для всех</button><button type="button" class="btn small" data-vact="send">Отправить парковку</button></div>';
@@ -1067,7 +1145,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function renderHist(){
     histDirty=false;
     var counts=countsMap(),rows=visibleRows(counts),list=$('list');
-    lastVisits=buildVisits(rows);
+    lastVisits=buildVisits(rows);allVisits=buildVisits(records.filter(function(r){return !r.example}));
     var nv=rows.filter(function(r){return r.status==='violator'}).length;
     $('hsum').textContent=rows.length?(plural(lastVisits.length,['парковка','парковки','парковок'])+' · '+plural(rows.length,['машина','машины','машин'])+(nv?' · '+nv+' нет в реестре':'')):'';
     if(!rows.length){list.innerHTML='<div class="empty">'+(query.trim()?'Ничего не найдено.':records.length?'В этом фильтре пусто.':'Пока ни одной проверки. Откройте вкладку «Проверка».')+'</div>';return}
@@ -1099,6 +1177,14 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         if(p===null)return;p=p.trim();
         v.list.forEach(function(r){r.place=p;delete r.autoPlace});
         save();render();toast('Место изменено');
+      }else if(a==='merge'){
+        var wv=vt.dataset.with;
+        records.forEach(function(r){if(r.vid===wv)r.vid=v.vid});
+        save();render();toast('Парковки объединены');
+      }else if(a==='decline'){
+        var dc=declinedSet(),other=allVisits.filter(function(x){return x.vid===vt.dataset.with})[0];
+        if(other){dc[pairKey(v,other)]=1;try{localStorage.setItem(DK,JSON.stringify(dc))}catch(e){}}
+        renderHist();
       }else if(a==='send'){sendRecords(v.list,'proverka-parkovka-'+dayStamp()+'.json')}
       return;
     }
@@ -1169,12 +1255,13 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     real.forEach(function(r){['car','shot'].forEach(function(s){if(r[s])keys.push(r.id+':'+s)})});
     return Promise.all(keys.map(function(k){return imgCache[k]?Promise.resolve(imgCache[k]):imgGet(k)})).then(function(vals){
       var imgs={};keys.forEach(function(k,i){if(vals[i])imgs[k]=vals[i]});
-      return new Blob([JSON.stringify({app:'fgis-fri',v:1,saved:new Date().toISOString(),records:real,images:imgs})],{type:'application/json'});
+      return new Blob([JSON.stringify({app:'fgis-fri',v:1,saved:new Date().toISOString(),records:real,images:imgs,places:list?[]:loadPlaces()})],{type:'application/json'});
     });
   }
   function bkName(){var d=new Date();return 'proverka-kopiya-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.json'}
   function fmtSize(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(b/1024))+' КБ'}
   function downloadBlob(blob,name,msg){
+    if(NATIVE){blobB64(blob).then(function(b){AndroidApp.save(name,blob.type||'application/octet-stream',b);toast(msg,4000)},function(){toast('Не удалось сохранить файл')});return}
     var a=document.createElement('a'),url=URL.createObjectURL(blob);
     a.href=url;a.download=name;document.body.appendChild(a);a.click();
     setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url)},4000);
@@ -1184,6 +1271,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function sendRecords(list,name){
     toast('Собираю файл…',6000);
     buildBackup(list).then(function(blob){
+      if(NATIVE){return blobB64(blob).then(function(b){AndroidApp.share(name,'application/json',b)})}
       if(shareType&&navigator.share){
         var file=new File([blob],name,{type:shareType});
         return navigator.share({files:[file],title:'Проверка авто'}).catch(function(e){if(e&&e.name==='AbortError')return;downloadBlob(blob,name,'Файл сохранён в загрузки ('+fmtSize(blob.size)+'). Отправьте его вручную.')});
@@ -1213,10 +1301,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(!records.some(function(r){return !r.example})){toast('Пока нечего сохранять');return}
     toast('Собираю копию…',6000);
     buildBackup().then(function(blob){
-      var a=document.createElement('a'),url=URL.createObjectURL(blob);
-      a.href=url;a.download=bkName();document.body.appendChild(a);a.click();
-      setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url)},4000);
-      markBackup();toast('Копия сохранена в загрузки ('+fmtSize(blob.size)+')',4000);
+      downloadBlob(blob,bkName(),'Копия сохранена в загрузки ('+fmtSize(blob.size)+')');markBackup();
     }).catch(function(){toast('Не удалось собрать копию.')});
   });
   var shareType=null;
@@ -1228,9 +1313,10 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       });
     }
   }catch(e){}
-  if(shareType)$('bkShare').hidden=false;
+  if(shareType||NATIVE)$('bkShare').hidden=false;
   $('bkShare').addEventListener('click',function(){
     if(!records.some(function(r){return !r.example})){toast('Пока нечего отправлять');return}
+    if(NATIVE){buildBackup().then(function(blob){return blobB64(blob)}).then(function(b){AndroidApp.share(bkName(),'application/json',b);markBackup()}).catch(function(){toast('Не удалось отправить копию.')});return}
     buildBackup().then(function(blob){
       var file=new File([blob],bkName(),{type:shareType});
       return navigator.share({files:[file],title:'Копия проверок'}).then(markBackup);
@@ -1244,6 +1330,11 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       var d;try{d=JSON.parse(rd.result)}catch(e){toast('Это не файл копии.');return}
       if(!d||d.app!=='fgis-fri'||!Array.isArray(d.records)){toast('Это не файл копии из этого приложения.');return}
       var added=0,skipped=0,jobs=[];
+      if(Array.isArray(d.places)){
+        var pl=loadPlaces();
+        d.places.forEach(function(p){if(p&&p.name&&!pl.some(function(x){return normPlace(x.name)===normPlace(p.name)}))pl.push({name:String(p.name),geo:p.geo||null})});
+        savePlaces(pl);renderTpls();
+      }
       d.records.forEach(function(r){
         if(!r||typeof r!=='object'||!r.id||typeof r.plate!=='string')return;
         var ex=byId(r.id);
@@ -1336,7 +1427,14 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     },function(){$('allCount').textContent=location.protocol==='https:'?'Не удалось загрузить карту. Проверьте интернет.':'Карта работает только на сайте github.io.'});
   });
 
-  load();blocks=[newBlock()];curK=blocks[0].k;renderBlocks();render();tryPersist();
+  window.__back=function(){
+    if(vw){closeViewer();return true}
+    if(!$('mapx').hidden){closePicker();return true}
+    if(!$('mapall').hidden){closeAll();return true}
+    if(tab!=='check'){showTab('check');return true}
+    return false;
+  };
+  load();assignVids();renderTpls();blocks=[newBlock()];curK=blocks[0].k;renderBlocks();render();tryPersist();
   // Сервис-воркер нужен только для установки приложения (APK/значок). Он ничего не кэширует.
   try{
     if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
@@ -1345,6 +1443,9 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
+
+
 
 
 
