@@ -218,6 +218,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
 .vb,.vx{font:inherit;font-weight:600;font-size:15px;background:#fff;color:#111;border:0;border-radius:12px;padding:12px 14px;cursor:pointer;flex:1 1 0;text-align:center;min-height:46px;display:inline-flex;align-items:center;justify-content:center}
 .vx{flex:0 0 auto;padding:9px 14px;min-height:0}
 .vb.del{background:#c0352b;color:#fff}
+.dlg{position:fixed;inset:0;z-index:30;background:#0009;display:flex;align-items:flex-end;justify-content:center}.dbox{background:var(--surface);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow:auto}.dbox h3{margin:0 0 10px;font-size:17px}.dbox .row{margin-top:12px}
 .mapx{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column}
 .mapbar{padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
 .maphint{margin:0;font-size:12.5px;color:var(--muted)}
@@ -359,13 +360,29 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       <label class="chk"><input type="checkbox" id="stampChk" checked> Накладывать на фото машины дату, время и место</label>
       <div class="seg" id="themeSeg" role="group" aria-label="Тема"><span class="sl">Тема:</span><button type="button" data-th="auto" aria-pressed="true">Как в системе</button><button type="button" data-th="light" aria-pressed="false">Светлая</button><button type="button" data-th="dark" aria-pressed="false">Тёмная</button></div>
     </div>
+    <div class="card" id="reportCard">
+      <h2>Сообщить об ошибке</h2>
+      <p class="hint">Опишите, что не так. Сообщение получит автор приложения. Данные других машин не отправляются, только то, что вы выберете ниже.</p>
+      <label for="rpText">Что случилось
+        <textarea id="rpText" placeholder="Например: номер с фото прочитался неверно"></textarea>
+      </label>
+      <label for="rpCar">Приложить карточку машины
+        <select id="rpCar"><option value="">Не прикладывать</option></select>
+      </label>
+      <label class="chk"><input type="checkbox" id="rpDiag" checked> Добавить диагностику (версия, телефон, последние сообщения и ошибки)</label>
+      <div class="row">
+        <button type="button" class="btn primary" id="rpSend">Отправить автору</button>
+        <button type="button" class="btn" id="rpCopy">Скопировать текст</button>
+      </div>
+      <p class="hint">Откроется список приложений: выберите Telegram, почту или другой мессенджер. Почта автора: sherbinin0098@gmail.com</p>
+    </div>
     <details class="how" id="how">
       <summary>Как получить скриншот проверки</summary>
       <ol>
         <li>Нажмите синюю кнопку: номер скопируется, откроется страница Госуслуг.</li>
         <li>На сайте долго нажмите на поле номера и выберите «Вставить», затем «Проверить». Если сайт попросит войти, войдите через Госуслуги.</li>
         <li>Когда появится результат, сделайте скриншот (Android: питание + громкость вниз).</li>
-        <li>Вернитесь сюда, отметьте результат и прикрепите скриншот. Добавить или заменить фото можно и позже, в истории.</li>
+        <li>Вернитесь сюда и прикрепите скриншот: приложение прочитает его и само отметит «Есть в реестре» или «Нет в реестре». Если не прикреплять скриншот, результат отмечается кнопкой. Выбор всегда можно изменить. Добавить или заменить фото можно и позже, в истории.</li>
       </ol>
     </details>
     <footer class="hint">
@@ -389,6 +406,13 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   <div class="mapwrap"><div id="map2"></div></div>
   <div class="mapbtns"><button type="button" class="btn primary" id="allClose">Закрыть</button></div>
 </div>
+  <div class="dlg" id="placeDlg" hidden>
+    <div class="dbox" role="dialog" aria-label="Место для всех машин парковки">
+      <h3>Место для всех машин парковки</h3>
+      <div class="inline"><input type="text" id="vpInput" data-ac="1" autocomplete="off" placeholder="Магазин, адрес или как вы его зовёте"><button type="button" class="btn small" id="vpMap">На карте</button></div>
+      <div class="row"><button type="button" class="btn" id="vpCancel">Отмена</button><button type="button" class="btn primary" id="vpOk">Сохранить</button></div>
+    </div>
+  </div>
 <div class="mapx" id="mapx" hidden role="dialog" aria-label="Выбор места на карте">
   <div class="mapbar"><p class="maphint">Двигайте карту, чтобы метка встала на место</p><p class="mapaddr" id="mapAddr"></p></div>
   <div class="mapwrap"><div id="map"></div><div class="pin" id="pin" aria-hidden="true"><svg viewBox="0 0 32 44" width="36" height="50"><path d="M16 0C7.2 0 0 7 0 15.7 0 27.5 16 44 16 44s16-16.5 16-28.3C32 7 24.8 0 16 0z" fill="#c0352b"/><circle cx="16" cy="15.5" r="6.5" fill="#ffffff"/></svg><span class="shadow"></span></div></div>
@@ -407,12 +431,12 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   var KEY='fgis-fri-checks-v1';
   var LAT={A:'А',B:'В',E:'Е',K:'К',M:'М',H:'Н',O:'О',P:'Р',C:'С',T:'Т',Y:'У',X:'Х'};
   var RE=/^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
-  var BADGE={yes:'знак есть',no:'знака нет',unknown:'знак не смотрел'};
+  var BADGE={yes:'знак «Инвалид» есть',no:'знака «Инвалид» нет',unknown:'знак не смотрел'};
   var STATUS={violator:'Нет в реестре',ok:'В реестре',new:'Не отмечено'};
   var SLOT={car:'Фото машины',shot:'Скриншот проверки'};
   var TILE={car:'Фото машины',shot:'Скриншот'};
   var SIZE={car:[1000,0.65],shot:[1500,0.72]};
-  var GOS='https://www.gosuslugi.ru/invalidam/check-transport',PAGE_VER='2026-10-23c';
+  var GOS='https://www.gosuslugi.ru/invalidam/check-transport',PAGE_VER='2026-10-23g';
   var $=function(id){return document.getElementById(id)};
   var records=[],filter='all',openId=null,openV=null,editId=null,confirmId=null,query='';
   var imgCache={},pending={},newGeo=null,autoPlace=null,tab='check',histDirty=true,lastVisits=[];
@@ -504,7 +528,18 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function pretty(p){var m=RE.exec(p);return m?m[1]+' '+m[2]+' '+m[3]+' '+m[4]:p}
   function times(n){var a=n%10,b=n%100;return n+' '+((a>=2&&a<=4&&(b<10||b>=20))?'раза':'раз')}
   var tt;
-  function toast(msg,ms){var el=$('toast');el.textContent=msg;el.hidden=false;clearTimeout(tt);tt=setTimeout(function(){el.hidden=true},ms||2600)}
+  var diagMsgs=[],diagErrs=[];
+  function diagTime(){var d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())}
+  function toast(msg,ms){
+    diagMsgs.push(diagTime()+' '+String(msg).slice(0,300));if(diagMsgs.length>25)diagMsgs.shift();
+    var el=$('toast');el.textContent=msg;el.hidden=false;clearTimeout(tt);
+    // time to read: about 15 characters a second, a few seconds at least; a tap closes it sooner
+    var need=Math.min(15000,2800+70*String(msg).length);
+    tt=setTimeout(function(){el.hidden=true},Math.max(ms||0,need));
+  }
+  window.addEventListener('error',function(e){diagErrs.push(diagTime()+' '+(e&&e.message||'ошибка')+(e&&e.filename?' ('+String(e.filename).split('/').pop()+':'+e.lineno+')':''));if(diagErrs.length>15)diagErrs.shift()});
+  window.addEventListener('unhandledrejection',function(e){var r=e&&e.reason;diagErrs.push(diagTime()+' promise: '+String(r&&r.message||r).slice(0,200));if(diagErrs.length>15)diagErrs.shift()});
+  (function(){var el=$('toast');if(el)el.addEventListener('click',function(){clearTimeout(tt);el.hidden=true})})();
   function legacyCopy(text){
     var ta=document.createElement('textarea');
     ta.value=text;ta.setAttribute('readonly','');
@@ -599,7 +634,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       else{map.setView([55.7539,37.6208],11);gotoMe()}
     },function(){$('mapAddr').textContent=location.protocol==='https:'?'Не удалось загрузить карту. Проверьте интернет и попробуйте ещё раз.':'Карта работает только на сайте. Откройте приложение по ссылке github.io.'});
   }
-  function closePicker(){$('mapx').hidden=true;document.body.style.overflow='';pickCb=null}
+  function closePicker(){$('mapx').hidden=true;document.body.style.overflow=$('placeDlg')&&!$('placeDlg').hidden?'hidden':'';pickCb=null}
   $('mapCancel').addEventListener('click',closePicker);
   $('mapMe').addEventListener('click',gotoMe);
   $('mapOk').addEventListener('click',function(){
@@ -716,6 +751,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     }).sort(function(a,b){return b._s-a._s}).slice(0,6);
   }
   function acRef(){
+    if(AC.el&&AC.el.id==='vpInput'&&vpV){for(var q=0;q<vpV.list.length;q++)if(vpV.list[q].geo)return vpV.list[q].geo}
     var row=AC.el&&AC.el.closest('.crow'),r=row&&byId(row.dataset.id);
     if(r&&r.geo)return r.geo;
     if(newGeo)return newGeo;
@@ -853,6 +889,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       toast('Место: '+name);applySessionPlace();renderTpls();
       return;
     }
+    if(el.id==='vpInput'){vpGeo=geo||null;vpOver=i.charAt(0)==='n';return}
     var row=el.closest('.crow'),r=row&&byId(row.dataset.id);if(!r)return;
     r.place=name;delete r.autoPlace;
     if(geo&&(i.charAt(0)==='n'||!r.geo))r.geo=geo;
@@ -862,6 +899,36 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   document.addEventListener('input',function(e){if(e.target===AC.el)acUpdate()});
   document.addEventListener('focusout',function(e){var t=e.target;if(t===AC.el)setTimeout(function(){if(AC.el===t&&document.activeElement!==t)acClose()},150)});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&AC.el)acClose()});
+
+  // ---------- one place for all cars of a parking: a dialog with search, your places and the map ----------
+  var vpV=null,vpGeo=null,vpOver=false;
+  function openPlaceDlg(v){
+    vpV=v;vpGeo=null;vpOver=false;
+    $('vpInput').value=placeOf(v);$('placeDlg').hidden=false;document.body.style.overflow='hidden';
+    setTimeout(function(){$('vpInput').focus()},60);
+  }
+  function closePlaceDlg(){
+    acClose();$('placeDlg').hidden=true;vpV=null;
+    if($('mapx').hidden&&$('mapall').hidden&&$('viewer').hidden)document.body.style.overflow='';
+  }
+  $('vpCancel').addEventListener('click',closePlaceDlg);
+  $('placeDlg').addEventListener('click',function(e){if(e.target===this)closePlaceDlg()});
+  $('vpMap').addEventListener('click',function(){
+    if(!vpV)return;
+    var start=null;for(var i=0;i<vpV.list.length;i++)if(vpV.list[i].geo){start=vpV.list[i].geo;break}
+    openPicker(start,function(g,addr){
+      vpGeo=g;vpOver=true;
+      if(addr)$('vpInput').value=addr;
+      document.body.style.overflow='hidden';
+    });
+  });
+  $('vpOk').addEventListener('click',function(){
+    if(!vpV)return;
+    var v=vpV,p=$('vpInput').value.trim(),g=vpGeo,over=vpOver;
+    v.list.forEach(function(r){r.place=p;delete r.autoPlace;if(g&&(over||!r.geo))r.geo=g});
+    closePlaceDlg();save();render();toast('Место изменено для всех машин парковки');
+  });
+  $('vpInput').addEventListener('input',function(){vpGeo=vpGeo&&vpOver?vpGeo:null});
 
   // ---------- repeat offenders ----------
   function sameplate(plate,exceptId){
@@ -1019,6 +1086,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       var bb=scope.indexOf('b:')===0?blockBy(scope.slice(2)):blocks.filter(function(x){return x.rid===scope})[0];
       if(bb&&!(bb.rid?(byId(bb.rid)||{}).plate:norm(bb.plate)))autoPlate(bb,f);
     }
+    if(slot==='shot'&&OCR_OK)autoShot(scope,f);
     if(t.id==='viewerFile')t.value='';
   });
   var vw=null;
@@ -1026,7 +1094,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   function openViewer(scope,slot){
     var s=srcOf(scope,slot);if(!s||s==='loading')return;
     vw={scope:scope,slot:slot};$('viewerImg').src=s;$('vTitle').textContent=SLOT[slot];
-    $('vOcr').hidden=!(OCR_OK&&slot==='car');
+    $('vOcr').hidden=!(OCR_OK&&(slot==='car'||(slot==='shot'&&!!byId(scope))));$('vOcr').textContent=slot==='shot'?'Результат':'Номер с фото';
     vConfirm(false);$('viewer').hidden=false;document.body.classList.add('vopen');document.body.style.overflow='hidden';
   }
   function closeViewer(){
@@ -1045,6 +1113,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   $('vRm').addEventListener('click',function(){vConfirm(true)});
   $('vOcr').addEventListener('click',function(){
     if(!vw)return;var v=vw,blob=blobOf(v.scope,v.slot);if(!blob)return;
+    if(v.slot==='shot'){closeViewer();shotRead(v.scope,blob);return}
     toast('Читаю номер…',8000);
     recognizePlate(blob).then(function(res){
       if(!res){toast(ocrFailText(),5000);return}
@@ -1344,6 +1413,100 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     },function(){toast('Фото не открылось для распознавания.',3000)});
   }
 
+  // ---------- result of the check from a screenshot of the Gosuslugi page ----------
+  var NEG_RE=/(не\s*(найден|обнаружен|включен|состоит|зарегистрирован|внесен|числится|значится)|отсутству|нет\s+(в\s+реестр|данных|сведений|информации)|не\s+нашл)/;
+  var POS_RE=/(найден|включен|состоит\s+в\s+реестре|внесен|имеется|значится|зарегистрирован|есть\s+в\s+реестре|размещен)/;
+  var ERR_RE=/(ошибк|недоступн|не\s+удалось|повторите\s+попытк|технически|сервис\s+временно)/;
+  // verdict: {st:'violator'|'ok'|'error'|'unclear', line:'the line that decided'}
+  function shotVerdict(lines){
+    var rows=(lines||[]).map(function(l){return String(l.t||'')});
+    function fold(x){return x.toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ')}
+    var all=fold(rows.join(' '));
+    var neg=NEG_RE.test(all),pos=POS_RE.test(all.replace(new RegExp(NEG_RE.source,'g'),' ')),err=ERR_RE.test(all);
+    function lineOf(re){for(var i=0;i<rows.length;i++){if(re.test(fold(rows[i])))return rows[i]}return ''}
+    if(neg&&!pos)return {st:'violator',line:lineOf(NEG_RE)};
+    if(pos&&!neg)return {st:'ok',line:lineOf(POS_RE)};
+    if(err&&!neg&&!pos)return {st:'error',line:lineOf(ERR_RE)};
+    return {st:'unclear',line:''};
+  }
+  function clip(t,n){t=String(t||'').replace(/\s+/g,' ').trim();return t.length>n?t.slice(0,n)+'…':t}
+  function shotRead(scope,blob){
+    var r=byId(scope);
+    if(!r||!OCR_OK||!blob)return;
+    toast('Читаю результат со скриншота…',6000);
+    ocrLast={lines:null,err:''};
+    ocrOnce(blob,true).then(function(lines){
+      if(ocrLast.err){toast('Скриншот не прочитался: '+ocrLast.err+'.');return}
+      if(!lines||!lines.length){toast('На скриншоте не нашлось текста. Попробуйте сделать скриншот ещё раз.');return}
+      var v=shotVerdict(lines),pl=plateFromLines(lines),cur=norm(r.plate||'');
+      if(pl&&pl.cost>0)pl=null; // on a clean screenshot the plate is printed, a shaky guess is just noise
+      var seen=pl?[pl.plate].concat(pl.alts||[]):[];
+      if(cur&&pl&&seen.indexOf(cur)<0){
+        toast('На скриншоте номер '+pl.plate+', а в записи '+cur+'. Статус не менял. Проверьте, тот ли это скриншот.',9000);return;
+      }
+      if(v.st==='error'){toast('На скриншоте ошибка сайта: «'+clip(v.line,70)+'». Результата проверки нет, повторите проверку.',9000);return}
+      if(v.st==='unclear'){
+        var all=lines.map(function(l){return l.t}).join(' ');
+        toast('Не смог понять результат по скриншоту (прочитано: «'+clip(all,90)+'»). Отметьте вручную.',10000);return;
+      }
+      var label=STATUS[v.st],same=r.status===v.st;
+      if(!same)mark(r.id,v.st,true);else if(r.via!=='shot'){r.via='shot';save();render()}
+      toast((same?'Скриншот подтверждает: ':'По скриншоту отмечено: ')+label+(v.line?'. Прочитано: «'+clip(v.line,80)+'»':'')+(same?'.':'. Если это неверно, поправьте кнопкой.'),10000);
+    });
+  }
+  function autoShot(scope,file){
+    if(!OCR_OK||!byId(scope))return;
+    shrink(file,2200,0.9).then(function(b){shotRead(scope,b)},function(){toast('Скриншот не открылся для чтения.',3000)});
+  }
+
+  // ---------- message to the author of the app ----------
+  var AUTHOR_MAIL='sherbinin0098@gmail.com';
+  function fillReportCars(){
+    var sel=$('rpCar');if(!sel)return;
+    var keep=sel.value,list=records.filter(function(r){return !r.example}).sort(function(a,b){return a.date<b.date?1:-1}).slice(0,15);
+    sel.innerHTML='<option value="">Не прикладывать</option>'+list.map(function(r){return '<option value="'+r.id+'">'+esc((r.plate?pretty(r.plate):'без номера')+' · '+fmtDate(r.date))+'</option>'}).join('');
+    if(keep&&byId(keep))sel.value=keep;
+  }
+  function reportText(){
+    var L=['Проверка авто: сообщение об ошибке','Дата: '+new Date().toLocaleString('ru-RU'),'','Что случилось:',($('rpText').value||'').trim()||'(не описано)'];
+    var rid=$('rpCar').value,r=rid&&byId(rid);
+    if(r){
+      L.push('','Карточка машины:','Номер: '+(r.plate?pretty(r.plate):'не указан'),'Дата: '+fmtDate(r.date),'Место: '+(r.place||'не указано'),
+        'Результат: '+STATUS[r.status]+(r.via==='shot'?' (выбран автоматически по скриншоту)':''),'Знак «Инвалид»: '+BADGE[r.badge||'unknown'],
+        'Фото машины: '+(r.car?'есть':'нет')+', скриншот: '+(r.shot?'есть':'нет'));
+      if(r.geo)L.push('Координаты: '+r.geo.lat.toFixed(5)+', '+r.geo.lon.toFixed(5));
+      if(r.note)L.push('Заметка: '+r.note);
+      if(r.by)L.push('Кто снял: '+r.by);
+    }
+    if($('rpDiag').checked){
+      var v='';try{if(NATIVE&&AndroidApp.version)v=AndroidApp.version()}catch(e){}
+      L.push('','Диагностика:','Версия страницы: '+PAGE_VER,'Приложение: '+(NATIVE?(v||'старше 1.7'):'открыто в браузере'),
+        'Устройство: '+navigator.userAgent,'Экран: '+screen.width+'x'+screen.height+', окно '+innerWidth+'x'+innerHeight,
+        'Интернет: '+(navigator.onLine?'есть':'нет')+', язык '+navigator.language+', тема '+(document.documentElement.getAttribute('data-theme')||'авто'),
+        'Номер по фото: '+(OCR_OK?'есть':'нет')+', голос: '+(VOICE_OK?'есть':'нет')+', Google Диск: '+(GD_OK?(gd?'подключён':'не подключён'):'нет'),
+        'Записей: '+records.filter(function(x){return !x.example}).length);
+      if(ocrLast&&(ocrLast.err||ocrLast.lines))L.push('Последнее чтение фото: '+(ocrLast.err?'ошибка '+ocrLast.err:clip((ocrLast.lines||[]).map(function(l){return l.t}).join(' | '),300)));
+      L.push('','Последние сообщения приложения:');
+      L=L.concat(diagMsgs.length?diagMsgs:['нет']);
+      L.push('','Ошибки в работе страницы:');
+      L=L.concat(diagErrs.length?diagErrs:['нет']);
+    }
+    return L.join('\n');
+  }
+  if($('rpSend')){
+    $('rpText').addEventListener('focus',fillReportCars);
+    fillReportCars();
+    $('rpCopy').addEventListener('click',function(){copy(reportText(),'Текст скопирован. Вставьте его в письмо или сообщение автору.')});
+    $('rpSend').addEventListener('click',function(){
+      var txt=reportText(),name='proverka-oshibka-'+dayStamp()+'.txt';
+      if(!($('rpText').value||'').trim()){toast('Опишите в двух словах, что не так.');$('rpText').focus();return}
+      var blob=new Blob([txt],{type:'text/plain'});
+      if(NATIVE){nativeFile(blob,name,'share').then(function(ok){if(!ok)copy(txt,'Не удалось открыть отправку. Текст скопирован, вставьте его автору: '+AUTHOR_MAIL)});return}
+      if(navigator.share){navigator.share({title:'Проверка авто: ошибка',text:txt}).catch(function(e){if(!e||e.name!=='AbortError')copy(txt,'Текст скопирован. Отправьте его автору: '+AUTHOR_MAIL)});return}
+      location.href='mailto:'+AUTHOR_MAIL+'?subject='+encodeURIComponent('Проверка авто: ошибка')+'&body='+encodeURIComponent(txt.slice(0,1800));
+    });
+  }
+
   // ---------- voice: say the plate ----------
   var NUMW={'ноль':0,'нуль':0,'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10,'одиннадцать':11,'двенадцать':12,'тринадцать':13,'четырнадцать':14,'пятнадцать':15,'шестнадцать':16,'семнадцать':17,'восемнадцать':18,'девятнадцать':19,'двадцать':20,'тридцать':30,'сорок':40,'пятьдесят':50,'шестьдесят':60,'семьдесят':70,'восемьдесят':80,'девяносто':90,'сто':100,'двести':200,'триста':300,'четыреста':400,'пятьсот':500,'шестьсот':600,'семьсот':700,'восемьсот':800,'девятьсот':900};
   var LETW={'а':'А','в':'В','вэ':'В','ве':'В','е':'Е','э':'Е','к':'К','ка':'К','м':'М','эм':'М','н':'Н','эн':'Н','о':'О','р':'Р','эр':'Р','с':'С','эс':'С','т':'Т','тэ':'Т','те':'Т','у':'У','х':'Х','ха':'Х','икс':'Х'};
@@ -1408,7 +1571,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   // ---------- check tab: several cars on one parking ----------
   function newBlock(){return {k:'k'+(++keySeq),plate:'',badge:'unknown',img:{car:null,shot:null},rid:null,when:null}}
   function badgeHTML(cur){
-    return '<span class="sl">Знак:</span>'+['yes','no','unknown'].map(function(k){return '<button type="button" data-bb="'+k+'" aria-pressed="'+(cur===k)+'">'+{yes:'Да',no:'Нет',unknown:'Не смотрел'}[k]+'</button>'}).join('');
+    return '<span class="sl">Знак «Инвалид» на стекле:</span>'+['yes','no','unknown'].map(function(k){return '<button type="button" data-bb="'+k+'" aria-pressed="'+(cur===k)+'">'+{yes:'Да',no:'Нет',unknown:'Не смотрел'}[k]+'</button>'}).join('');
   }
   function plateBox(r){
     return r.plate?'<div class="preview">'+plateHTML(r.plate,'m')+'</div>'
@@ -1424,6 +1587,8 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         '<div class="current"><p><b>Что показал сайт?</b></p><div class="row2">'+
         '<button type="button" class="btn bad" data-bact="res" data-st="violator" aria-pressed="'+(r.status==='violator')+'">Нет в реестре</button>'+
         '<button type="button" class="btn good" data-bact="res" data-st="ok" aria-pressed="'+(r.status==='ok')+'">Есть в реестре</button></div>'+
+        '<p class="hint" data-el="via"'+(r.via==='shot'&&r.status!=='new'?'':' hidden')+'>Выбрано автоматически по скриншоту. Если неверно, нажмите другую кнопку.</p>'+
+        '<p class="hint">Нажмите кнопку или приложите скриншот проверки выше: результат определится сам. Ошиблись? Нажмите выбранную кнопку ещё раз, и отметка снимется.</p>'+
         '<a class="btn small ghost" data-bact="again" href="'+GOS+'" target="_blank" rel="noopener">Проверить ещё раз</a></div></div>';
     }
     return '<div class="car" data-k="'+b.k+'"><div class="carhead"><b>Машина '+(i+1)+'</b>'+(blocks.length>1?'<button type="button" class="btn small ghost danger" data-bact="rm">Убрать</button>':'')+'</div>'+
@@ -1497,6 +1662,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       el.querySelector('[data-el=badge]').innerHTML=badgeHTML(r.badge||'unknown');
       if(el.dataset.pl!==(r.plate||'')){el.dataset.pl=r.plate||'';el.querySelector('[data-el=plate]').innerHTML=plateBox(r)}
       Array.prototype.forEach.call(el.querySelectorAll('[data-bact=res]'),function(x){x.setAttribute('aria-pressed',r.status===x.dataset.st?'true':'false')});
+      var vh=el.querySelector('[data-el=via]');if(vh)vh.hidden=!(r.via==='shot'&&r.status!=='new');
     });
     $('newSession').hidden=!blocks.some(function(b){return b.rid});
     renderCTabs();
@@ -1541,7 +1707,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     }
     var a=t.dataset.bact;
     if(a==='rm'){dropBlock(b);var ix=blocks.indexOf(b);blocks=blocks.filter(function(x){return x.k!==b.k});curK=blocks[Math.max(0,ix-1)].k;renderBlocks();return}
-    if(a==='res'){if(r){mark(r.id,t.dataset.st);toast(t.dataset.st==='violator'?'Отмечено: нет в реестре. Можно прикрепить скриншот.':'Отмечено: есть в реестре')}return}
+    if(a==='res'){if(r&&r.status===t.dataset.st){mark(r.id,'new');toast('Отметка снята: результат не выбран');return}if(r){mark(r.id,t.dataset.st);toast(t.dataset.st==='violator'?'Отмечено: нет в реестре. Можно прикрепить скриншот.':'Отмечено: есть в реестре')}return}
     if(a==='again'){
       if(!r||!r.plate){e.preventDefault();toast('Сначала впишите номер');var pi=car.querySelector('input.plateEdit');if(pi)pi.focus();return}
       copy(r.plate,'Номер '+r.plate+' скопирован. Вставьте его на сайте.');return;
@@ -1576,7 +1742,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(dirty&&!confirm('Есть машина, которая ещё не проверена. Начать заново без неё?'))return;
     resetSession();window.scrollTo({top:0,behavior:'smooth'});
   });
-  function mark(id,st){var r=byId(id);if(!r)return;r.status=st;save();render()}
+  function mark(id,st,auto){var r=byId(id);if(!r)return;r.status=st;if(auto)r.via='shot';else delete r.via;save();render()}
 
   // ---------- quick photo: photo first, plate later ----------
   var QUICK_HINT='Быстрое фото: машина, время и место сохранятся сразу, номер впишете потом.';
@@ -1642,6 +1808,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     histDirty=true;
     if(tab==='hist')renderHist();
     refreshBlocks();bkInfo();
+    if(typeof fillReportCars==='function')fillReportCars();
   }
 
   // ---------- history: parking visits are formed automatically (same day + same place) ----------
@@ -1778,9 +1945,9 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
       '<span class="pill '+r.status+'">'+STATUS[r.status]+'</span></button>';
     if(!open)return h+'</div>';
     h+='<div class="cbody">'+tilesHTML(r.id)+
-      '<div class="seg2" role="group" aria-label="Результат проверки"><button type="button" class="v" data-act="violator" aria-pressed="'+(r.status==='violator')+'">Нет в реестре</button><button type="button" class="o" data-act="ok" aria-pressed="'+(r.status==='ok')+'">Есть в реестре</button></div>';
+      '<div class="seg2" role="group" aria-label="Результат проверки"><button type="button" class="v" data-act="violator" aria-pressed="'+(r.status==='violator')+'">Нет в реестре</button><button type="button" class="o" data-act="ok" aria-pressed="'+(r.status==='ok')+'">Есть в реестре</button></div>'+(r.via==='shot'&&r.status!=='new'?'<p class="hint">Выбрано автоматически по скриншоту. Можно изменить кнопками, а повторное нажатие снимает отметку.</p>':'');
     var bd=r.badge||'unknown';
-    h+='<div class="seg"><span class="sl">Знак:</span>'+['yes','no','unknown'].map(function(k){return '<button type="button" data-b="'+k+'" data-act="badge" aria-pressed="'+(bd===k)+'">'+{yes:'Да',no:'Нет',unknown:'Не смотрел'}[k]+'</button>'}).join('')+'</div>';
+    h+='<div class="seg"><span class="sl">Знак «Инвалид» на стекле:</span>'+['yes','no','unknown'].map(function(k){return '<button type="button" data-b="'+k+'" data-act="badge" aria-pressed="'+(bd===k)+'">'+{yes:'Да',no:'Нет',unknown:'Не смотрел'}[k]+'</button>'}).join('')+'</div>';
     var others=sameplate(r.plate,r.id);
     if(others.length)h+='<div class="repeat"><b>Этот номер уже попадался</b><ul>'+others.slice(0,5).map(function(x){return '<li>'+fmtDate(x.date)+(x.place?', '+esc(x.place):'')+' — '+STATUS[x.status]+'</li>'}).join('')+'</ul></div>';
     h+='<a class="btn primary" data-act="recheck" href="'+GOS+'" target="_blank" rel="noopener">Проверить ещё раз на Госуслугах</a>';
@@ -1849,10 +2016,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
         editId=null;confirmId=null;renderHist();
         if(isOpenV(v))scrollVisit(key);
       }else if(a==='place'){
-        var p=prompt('Место для всех машин этой парковки',placeOf(v));
-        if(p===null)return;p=p.trim();
-        v.list.forEach(function(r){r.place=p;delete r.autoPlace});
-        save();render();toast('Место изменено');
+        openPlaceDlg(v);
       }else if(a==='merge'){
         var wv=vt.dataset.with;
         records.forEach(function(r){if(r.vid===wv)r.vid=v.vid});
@@ -1881,7 +2045,7 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     if(a2==='pub'){r.pub=!r.pub;save();render();toast(r.pub?'Отмечено: опубликовано в блоге':'Отметка снята');return}
     if(a2==='edit'){editId=editId===id?null:id;renderHist();return}
     if(a2==='geo'){openPicker(r.geo,function(g,addr){r.geo=g;if(addr&&(!(r.place||'').trim()||r.place===r.autoPlace)){r.place=addr;r.autoPlace=addr}save();render();toast(addr?'Место отмечено':'Адрес не найден, точка сохранена')});return}
-    if(a2==='violator'||a2==='ok'){mark(id,a2);return}
+    if(a2==='violator'||a2==='ok'){if(r&&r.status===a2){mark(id,'new');toast('Отметка снята: результат не выбран');return}mark(id,a2);return}
     if(a2==='del'){confirmId=id;renderHist();return}
     if(a2==='del-no'){confirmId=null;renderHist();return}
     if(a2==='del-yes'){
@@ -2533,6 +2697,12 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
   }catch(e){}
 })();
 </script>
+
+
+
+
+
+
 
 
 
