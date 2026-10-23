@@ -1,0 +1,29 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android-src.zip'
+      - '.github/workflows/apk.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - run: unzip -q android-src.zip -d android
+      - run: gradle -p android assembleRelease --no-daemon
+      - run: cp android/app/build/outputs/apk/release/app-release.apk Proverka-avto.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Проверка авто, сборка ${{ github.run_number }}
+          files: Proverka-avto.apk
