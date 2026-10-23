@@ -10,6 +10,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VCODE: ${{ github.run_number }}
+      HAS_UPLOAD_KEY: ${{ secrets.UPLOAD_KEYSTORE != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -18,12 +21,24 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
-      - run: unzip -q android-src.zip -d android
-      - run: gradle -p android assembleRelease --no-daemon
+          gradle-version: '8.11.1'
+      - run: unzip -q -o android-src.zip -d android
+      - run: gradle -p android assembleRelease --no-daemon -PvCode=$((100 + VCODE))
       - run: cp android/app/build/outputs/apk/release/app-release.apk Proverka-avto.apk
+      - name: AAB for Google Play
+        if: env.HAS_UPLOAD_KEY == 'true'
+        env:
+          UPLOAD_KEYSTORE: ${{ secrets.UPLOAD_KEYSTORE }}
+          UPLOAD_PASSWORD: ${{ secrets.UPLOAD_PASSWORD }}
+        run: |
+          echo "$UPLOAD_KEYSTORE" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          UPLOAD_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks" gradle -p android bundleRelease --no-daemon -Pupload -PvCode=$((100 + VCODE))
+          cp android/app/build/outputs/bundle/release/app-release.aab Proverka-avto-google-play.aab
+          rm -f "$RUNNER_TEMP/upload.jks"
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
           name: Проверка авто, сборка ${{ github.run_number }}
-          files: Proverka-avto.apk
+          files: |
+            Proverka-avto.apk
+            Proverka-avto-google-play.aab
