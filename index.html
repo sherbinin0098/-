@@ -600,9 +600,9 @@ body.vopen .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
     var to=setTimeout(fail,8000);
     s.src=base+'leaflet.js';
     s.onload=function(){
-      if(done&&!window.L)return;
-      var first=!done;done=true;clearTimeout(to);
-      if(!first)return;
+      if(done)return;
+      if(!window.L){fail();return} // вместо библиотеки пришла чужая страница (Wi-Fi с авторизацией, сбой сети) — пробуем следующий адрес
+      done=true;clearTimeout(to);
       var l=document.createElement('link');l.rel='stylesheet';l.href=base+'leaflet.css';document.head.appendChild(l);res();
     };
     s.onerror=fail;
